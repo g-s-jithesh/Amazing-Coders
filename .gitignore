@@ -1,0 +1,30 @@
+# Secrets & local config
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+CLAUDE.local.md
+infra/pki/**/*.key
+infra/pki/out/
+
+# Simulator ground truth (evaluation only; never committed or read by the pipeline)
+data/ground_truth/
+
+# Build / caches
+**/node_modules/
+**/dist/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/coverage.json
+**/cover.out
+**/.venv/
+ml/artefacts/
+spark-warehouse/
+.terraform/
+*.tfstate*
+
+# Organiser documents (not redistributable)
+Motorq_Hackathon_*.pdf
+Motorq_Hackathon_*.docx
