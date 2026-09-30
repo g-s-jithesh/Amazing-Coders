@@ -9,8 +9,8 @@ import (
 	"math/rand/v2"
 	"time"
 
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/vin"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/geo"
-	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
 )
 
 type Model struct {

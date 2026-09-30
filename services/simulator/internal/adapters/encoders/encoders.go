@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/dtc"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
 )
 
@@ -196,24 +197,6 @@ func JoinBatch(records [][]byte, dst []byte) []byte {
 // CFields documents the oem_c positional layout (v1).
 const CFields = "schema;vin;ts_ms;seq;evt;lat;lon;speed_kmh;odo_km;soc_pct;pack_v;pack_a;t_min_c;t_max_c;cell_min_mv;cell_max_mv;iso_kohm;hvil;aux_v;amb_c;charge_state;charge_kw;dtc_hex"
 
-// EncodeDTC packs an SAE J2012 code into 2 bytes: bits 15-14 system (P,C,B,U), 13-12 first digit
-// (0-3), then three hex nibbles. P0A7E → 0x0A7E, U0111 → 0xC111.
-func EncodeDTC(code string) (uint16, error) {
-	if len(code) != 5 {
-		return 0, fmt.Errorf("dtc %q: length", code)
-	}
-	sys := map[byte]uint16{'P': 0, 'C': 1, 'B': 2, 'U': 3}
-	s, ok := sys[code[0]]
-	if !ok || code[1] < '0' || code[1] > '3' {
-		return 0, fmt.Errorf("dtc %q: system/digit", code)
-	}
-	rest, err := strconv.ParseUint(code[2:], 16, 16)
-	if err != nil {
-		return 0, fmt.Errorf("dtc %q: %w", code, err)
-	}
-	return s<<14 | uint16(code[1]-'0')<<12 | uint16(rest), nil
-}
-
 func appendF(dst []byte, x float64, prec int) []byte {
 	return strconv.AppendFloat(dst, x, 'f', prec, 64)
 }
@@ -282,7 +265,7 @@ func EncodeC(s *telemetry.Sample, dst []byte) ([]byte, error) {
 	dst = appendF(dst, float64(s.ChargePowerKW), 2)
 	sep()
 	for _, code := range s.DTC {
-		v, err := EncodeDTC(code)
+		v, err := dtc.Encode(code)
 		if err != nil {
 			dst = append(dst, "ZZZZ"...) // unencodable code: gateway must reject as DTC_FORMAT
 			continue

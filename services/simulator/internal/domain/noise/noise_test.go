@@ -7,8 +7,8 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/vin"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
-	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
 )
 
 var testVIN = func() string {

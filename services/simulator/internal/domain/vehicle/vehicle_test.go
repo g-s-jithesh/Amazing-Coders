@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/vin"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/battery"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/env"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
-	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
 )
 
 var testVIN, _ = vin.Build("0KC", "DV45N", 2024, 'C', 1)

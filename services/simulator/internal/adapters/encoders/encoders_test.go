@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/vin"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
-	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
 )
 
 var update = flag.Bool("update", false, "rewrite libs/oem-samples golden files")
@@ -25,19 +25,6 @@ func TestGoldenVINs(t *testing.T) {
 	}
 	if bad := GoldenCases()["malformed_vin_checksum"].VIN; vin.Valid(bad) || len(bad) != 17 {
 		t.Fatalf("malformed VIN %s must be 17 chars with a wrong check digit", bad)
-	}
-}
-
-func TestEncodeDTC(t *testing.T) {
-	for code, want := range map[string]uint16{"P0A7E": 0x0A7E, "U0111": 0xC111, "B1234": 0x9234, "C0300": 0x4300, "P3FFF": 0x3FFF} {
-		if got, err := EncodeDTC(code); err != nil || got != want {
-			t.Errorf("EncodeDTC(%s) = %04X, %v; want %04X", code, got, err, want)
-		}
-	}
-	for _, bad := range []string{"PX12Z", "P4000", "X0A7E", "P0A7", "P0A7EE", "P0G00"} {
-		if _, err := EncodeDTC(bad); err == nil {
-			t.Errorf("EncodeDTC(%s) want error", bad)
-		}
 	}
 }
 

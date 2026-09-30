@@ -34,18 +34,19 @@ message TelemetryEvent {
   int64 ts_ingest_ms = 5; // gateway clock, UTC
   uint64 seq = 6; // per-vehicle monotonic counter (dedup key with vin)
 
-  double lat = 7;
-  double lon = 8;
-  float speed_kmh = 9;
+  // Sensor groups may drop out; `optional` distinguishes "missing" from a real zero.
+  optional double lat = 7; // GPS group
+  optional double lon = 8;
+  optional float speed_kmh = 9;
   double odo_km = 10;
 
   float soc_pct = 11;
   float pack_voltage_v = 12;
   float pack_current_a = 13; // + discharge, - charge
-  float pack_temp_min_c = 14;
-  float pack_temp_max_c = 15;
-  uint32 cell_v_min_mv = 16;
-  uint32 cell_v_max_mv = 17;
+  optional float pack_temp_min_c = 14; // temperature group
+  optional float pack_temp_max_c = 15;
+  optional uint32 cell_v_min_mv = 16; // cell-voltage group
+  optional uint32 cell_v_max_mv = 17;
   float isolation_kohm = 18;
   bool hv_interlock_ok = 19;
   float aux_12v_v = 20;

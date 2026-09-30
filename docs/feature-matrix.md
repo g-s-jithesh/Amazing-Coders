@@ -6,8 +6,8 @@ Update with `/feature-done F-xx`. Status: Done / Partial / Planned. Priority: Mo
 | ID | Feature | User story | Priority | Status | Code path | Tests | Video | Last verified |
 |----|---------|------------|----------|--------|-----------|-------|-------|---------------|
 | F-01 | 100K-EV simulator with ageing, faults, noise | As an evaluator I can reproduce realistic fleet data from a seed | Must | Partial (all streaming modes done; backfill → batch layer) | services/simulator/ | services/simulator/internal/**/*_test.go | | 2026-09-30 |
-| F-02 | Multi-OEM ingestion & normalisation | As a platform team I can onboard an OEM format without downtime | Must | Planned | services/ingest-gateway/ | | | |
-| F-03 | Schema validation, VIN/DTC parsing, dedup, DLQ | As ops I trust bad data never corrupts analytics | Must | Planned | services/ingest-gateway/ | | | |
+| F-02 | Multi-OEM ingestion & normalisation | As a platform team I can onboard an OEM format without downtime | Must | Partial (4a: OEM adapters + golden contract) | services/ingest-gateway/, libs/go-common | services/ingest-gateway/internal/**/*_test.go | | 2026-09-30 |
+| F-03 | Schema validation, VIN/DTC parsing, dedup, DLQ | As ops I trust bad data never corrupts analytics | Must | Partial (4a: validation chain, DLQ reasons, Bloom dedup) | services/ingest-gateway/ | services/ingest-gateway/internal/**/*_test.go | | 2026-09-30 |
 | F-04 | Live fleet map (< 2 s) | As a dispatcher I see every vehicle's SoC and location live | Must | Planned | services/stream-processor/, services/fleet-api/, web/ | | | |
 | F-05 | Real-time battery safety alerts (< 5 s) | As a technician I'm alerted to thermal / isolation / interlock faults | Must | Planned | services/stream-processor/ | | | |
 | F-06 | DTC decoding + runbook diagnostics (RAG) | As a technician I know what a code means and what to do | Must | Planned | services/battery-intel/ | | | |

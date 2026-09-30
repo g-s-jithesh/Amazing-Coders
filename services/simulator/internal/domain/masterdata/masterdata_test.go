@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
+	"github.com/g-s-jithesh/Amazing-Coders/libs/go-common/vin"
 )
 
 var testModels = []Model{

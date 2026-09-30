@@ -21,7 +21,7 @@ Go service. It is the **front door for all telemetry**: it authenticates, decode
 ```
 cmd/ingest-gateway/main.go
 internal/domain/
-  vin/ dtc/            # pure parsers/validators (property + fuzz tested)
+  (vin, dtc live in libs/go-common: one implementation shared with the simulator)
   canonical/           # canonical event value object + range rules (soc 0–100, temp −40..90 °C, etc.)
   pipeline/            # Chain of Responsibility: Step interface + ordered steps
   dedup/               # rotating Bloom filter (pure) + Confirmer port
@@ -52,12 +52,20 @@ Any failure → DLQ with its reason, then continue with the next message.
 ## Identity rules (anti-spoofing, STRIDE "S")
 
 - Per-vehicle cert: `CN == VIN` in the topic **and** in the payload, otherwise `IDENTITY_MISMATCH`.
-- OEM-cloud cert or key: `CN == oem id` **and** that OEM is registered for the VIN (the `vin → oem` map is loaded from Postgres at startup and refreshed every 5 min; it's a cache, so on a miss, allow it and flag it with a metric, since the stream-processor also checks).
+- OEM-cloud cert or key: `CN == oem id` **and** that OEM is registered for the VIN.
+- **Decision (2026-09-30):** "registered for the VIN" is checked against the VIN's WMI using
+  `data/reference/wmi_synthetic.csv` (a VIN's first 3 chars identify its manufacturer), **not** a `vin → oem` map read
+  from Postgres: that map lives in the `fleet` schema, and root §5.2 forbids reading another service's schema. The
+  stream-processor re-checks tenancy/registration against fleet-api data. Revisit if an OEM sends VINs of several WMIs.
 
 ## Dedup (root §3.4)
 
 - A rotating pair of Bloom filters over `(vin, seq)` with a 10-min window and 1% FPR, sized from the configured eps.
 - A Bloom hit → Redis `SET dedup:{vin}:{seq} 1 NX EX 600`. Only drop the event when Redis confirms it has been seen.
+- **Decision (2026-09-30):** only Bloom *hits* (~1 % duplicates + ~1 % false positives) make a synchronous Redis
+  call. First sightings are written to Redis asynchronously in pipelined batches (never per event). A duplicate that
+  races its original, or lands on another replica, can therefore pass: acceptable because every sink is idempotent
+  (root §3.4); the goal is to cut duplicate volume, not to guarantee exactly-once.
 - **Redis down → skip dedup** (downstream sinks are idempotent), increment `dedup_degraded_total`, and don't fail ingestion. This is graceful degradation. Test it.
 
 ## Back-pressure (never drop accepted data)
