@@ -1,0 +1,6 @@
+published_by_simulator = 18142411
+publish_errors         = 0
+broker_offset_delta    = 18142411  {'oem.raw.oem_a.v1': 8138069, 'oem.raw.oem_b.v1': 5424749, 'oem.raw.oem_c.v1': 4579593}
+loss                   = 0
+steady_state_eps       = 152628  (floor)
+10s_window_eps min/max = 0 / 355324

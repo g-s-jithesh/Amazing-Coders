@@ -1,0 +1,10 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode kafka-direct --rate-hz 1 --speedup 0 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 180s 
+2026/09/30 10:17:43 INFO simulator running vehicles=100000 shard=0/1 mode=kafka-direct rate_hz=1 speedup=0 noise=realistic start=2026-09-30T04:47:42.000Z target_eps=0
+2026/09/30 10:17:53 INFO stats sim_now=2026-09-30T04:48:14Z samples=3387644 published=3390153 publish_errors=0 encode_errors=0 avg_eps=325962
+2026/09/30 10:18:03 INFO stats sim_now=2026-09-30T04:48:49Z samples=6873566 published=6910476 publish_errors=0 encode_errors=0 avg_eps=338741
+2026/09/30 10:18:13 INFO stats sim_now=2026-09-30T04:49:23Z samples=10231628 published=10301168 publish_errors=0 encode_errors=0 avg_eps=338843
+2026/09/30 10:18:23 INFO stats sim_now=2026-09-30T04:49:56Z samples=13539731 published=13640534 publish_errors=0 encode_errors=0 avg_eps=337624
+2026/09/30 10:18:33 INFO stats sim_now=2026-09-30T04:50:30Z samples=16921115 published=17053507 publish_errors=0 encode_errors=0 avg_eps=338356
+2026/09/30 10:18:36 INFO stats sim_now=2026-09-30T04:50:41Z samples=18000000 published=18142411 publish_errors=0 encode_errors=0 avg_eps=336353

@@ -1,0 +1,16 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode kafka-direct --rate-hz 1 --speedup 0 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 180s 
+2026/09/30 10:19:03 INFO simulator running vehicles=100000 shard=0/1 mode=kafka-direct rate_hz=1 speedup=0 noise=realistic start=2026-09-30T04:49:03.000Z target_eps=0
+2026/09/30 10:19:14 INFO stats sim_now=2026-09-30T04:49:24Z samples=2285654 published=2278876 publish_errors=0 encode_errors=0 avg_eps=220041
+2026/09/30 10:19:23 INFO stats sim_now=2026-09-30T04:49:38Z samples=3654971 published=3660176 publish_errors=0 encode_errors=0 avg_eps=179800
+2026/09/30 10:19:33 INFO stats sim_now=2026-09-30T04:50:06Z samples=6419046 published=6451477 publish_errors=0 encode_errors=0 avg_eps=212522
+2026/09/30 10:19:43 INFO stats sim_now=2026-09-30T04:50:10Z samples=6864379 published=6901213 publish_errors=0 encode_errors=0 avg_eps=171006
+2026/09/30 10:19:53 INFO stats sim_now=2026-09-30T04:50:30Z samples=8853785 published=8910118 publish_errors=0 encode_errors=0 avg_eps=176939
+2026/09/30 10:20:03 INFO stats sim_now=2026-09-30T04:50:32Z samples=9044323 published=9102373 publish_errors=0 encode_errors=0 avg_eps=150810
+2026/09/30 10:20:13 INFO stats sim_now=2026-09-30T04:50:37Z samples=9531718 published=9594556 publish_errors=0 encode_errors=0 avg_eps=136369
+2026/09/30 10:20:23 INFO stats sim_now=2026-09-30T04:50:37Z samples=9531718 published=9594556 publish_errors=0 encode_errors=0 avg_eps=119399
+2026/09/30 10:20:33 INFO stats sim_now=2026-09-30T04:50:45Z samples=10312396 published=10382755 publish_errors=0 encode_errors=0 avg_eps=114908
+2026/09/30 10:20:43 INFO stats sim_now=2026-09-30T04:51:19Z samples=13733148 published=13835817 publish_errors=0 encode_errors=0 avg_eps=137865
+2026/09/30 10:20:53 INFO stats sim_now=2026-09-30T04:51:54Z samples=17253735 published=17389057 publish_errors=0 encode_errors=0 avg_eps=157571
+2026/09/30 10:20:56 INFO stats sim_now=2026-09-30T04:52:02Z samples=18000000 published=18142411 publish_errors=0 encode_errors=0 avg_eps=160473

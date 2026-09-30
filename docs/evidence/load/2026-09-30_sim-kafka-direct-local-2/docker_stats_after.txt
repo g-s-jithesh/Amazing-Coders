@@ -1,0 +1,4 @@
+kilowatt-mosquitto-1 cpu=0.04% mem=74.56MiB / 13.81GiB
+kilowatt-postgres-1 cpu=0.01% mem=125.3MiB / 13.81GiB
+kilowatt-redis-1 cpu=0.30% mem=5.957MiB / 13.81GiB
+kilowatt-kafka-1 cpu=1.43% mem=1.19GiB / 13.81GiB

@@ -1,0 +1,1 @@
+OCI runtime exec failed: exec failed: unable to start container process: exec: "C:/Program Files/Git/opt/kafka/bin/kafka-get-offsets.sh": stat C:/Program Files/Git/opt/kafka/bin/kafka-get-offsets.sh: no such file or directory
