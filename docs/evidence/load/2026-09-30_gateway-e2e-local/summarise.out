@@ -1,0 +1,9 @@
+simulator published            = 1240811   (https dropped: 0)
+gateway accepted+rejected+dups = 1240811  = 1227193 + 1260 + 12358
+unaccounted                    = 0
+canonical offset delta         = 1227193  (accepted 1227193)
+dlq offset delta               = 1260  (rejected 1260)
+raw offset deltas              = {'oem.raw.oem_a.v1': 556666, 'oem.raw.oem_b.v1': 872, 'oem.raw.oem_c.v1': 313127}
+dlq reasons                    = {'DECODE': 244, 'DTC_FORMAT': 249, 'RANGE': 277, 'UNKNOWN_SCHEMA_VERSION': 244, 'VIN_CHECKSUM': 246}
+duplicate share of published   = 0.9960%
+produce latency (per message, until all acks) p50 <= 64 ms, p95 <= 256 ms, p99 <= 4096 ms over 870665 messages

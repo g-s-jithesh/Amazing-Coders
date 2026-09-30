@@ -26,6 +26,11 @@ This writes `env.json` and `env.md`: git SHA and dirty flag, OS, CPU model and c
 
 ## 3. Run it, capturing raw output with `tee`
 
+**Write to a local, non-synced directory during the run** (e.g. `$TEMP/kw-evidence-<label>`), then copy the files into
+`docs/evidence/...`. On 2026-09-30, writing into the repo while it sat in a OneDrive-synced folder produced a
+reproducible 1–8 s Kafka-ack stall cluster that vanished when writing to temp (see
+`docs/evidence/load/2026-09-30_gateway-e2e-local-3/`).
+
 | Kind | Command (prefer Make targets; create them if missing) | Raw artefacts to keep |
 |------|---------------------------------------------------------|-----------------------|
 | load | `make load 2>&1 \| tee <dir>/raw.log` | load-driver JSON (eps sent/acked), k6 `--summary-export` JSON, consumer lag snapshots before/during/after (`kafka-consumer-groups.sh --describe --all-groups`), Prometheus query exports for e2e latency p50/p95/p99 |

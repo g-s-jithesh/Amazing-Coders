@@ -1,0 +1,18 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.1 --speedup 1 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 120s 
+2026/09/30 11:09:19 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.1 speedup=1 noise=realistic start=2026-09-30T05:39:19.000Z target_eps=10000
+2026/09/30 11:09:29 INFO stats sim_now=2026-09-30T05:39:28Z samples=131858 published=131069 publish_errors=0 encode_errors=0 avg_eps=12569
+2026/09/30 11:09:39 INFO stats sim_now=2026-09-30T05:39:38Z samples=231858 published=231211 publish_errors=0 encode_errors=0 avg_eps=11318
+2026/09/30 11:09:49 INFO stats sim_now=2026-09-30T05:39:48Z samples=331858 published=332078 publish_errors=0 encode_errors=0 avg_eps=10913
+2026/09/30 11:09:59 INFO stats sim_now=2026-09-30T05:39:58Z samples=431858 published=433091 publish_errors=0 encode_errors=0 avg_eps=10712
+2026/09/30 11:10:09 INFO stats sim_now=2026-09-30T05:40:08Z samples=531858 published=534135 publish_errors=0 encode_errors=0 avg_eps=10592
+2026/09/30 11:10:19 INFO stats sim_now=2026-09-30T05:40:18Z samples=631858 published=635085 publish_errors=0 encode_errors=0 avg_eps=10509
+2026/09/30 11:10:29 INFO stats sim_now=2026-09-30T05:40:28Z samples=731858 published=736000 publish_errors=0 encode_errors=0 avg_eps=10450
+2026/09/30 11:10:39 INFO stats sim_now=2026-09-30T05:40:38Z samples=831858 published=836924 publish_errors=0 encode_errors=0 avg_eps=10405
+2026/09/30 11:10:49 INFO stats sim_now=2026-09-30T05:40:48Z samples=931858 published=937923 publish_errors=0 encode_errors=0 avg_eps=10372
+2026/09/30 11:10:59 INFO stats sim_now=2026-09-30T05:40:58Z samples=1031858 published=1038811 publish_errors=0 encode_errors=0 avg_eps=10343
+2026/09/30 11:11:09 INFO stats sim_now=2026-09-30T05:41:08Z samples=1131858 published=1139763 publish_errors=0 encode_errors=0 avg_eps=10321
+2026/09/30 11:11:19 INFO stats sim_now=2026-09-30T05:41:18Z samples=1231858 published=1240811 publish_errors=0 encode_errors=0 avg_eps=10303
+2026/09/30 11:11:19 INFO stats sim_now=2026-09-30T05:41:18Z samples=1231858 published=1240811 publish_errors=0 encode_errors=0 avg_eps=10301
+2026/09/30 11:11:19 INFO https dropped_records=0

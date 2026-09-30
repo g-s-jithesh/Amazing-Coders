@@ -1,0 +1,5 @@
+kilowatt-ingest-gateway-1 cpu=0.47% mem=107.5MiB / 13.81GiB
+kilowatt-mosquitto-1 cpu=0.04% mem=3.672MiB / 13.81GiB
+kilowatt-postgres-1 cpu=5.17% mem=125.5MiB / 13.81GiB
+kilowatt-redis-1 cpu=1.39% mem=142.6MiB / 13.81GiB
+kilowatt-kafka-1 cpu=24.70% mem=2.192GiB / 13.81GiB
