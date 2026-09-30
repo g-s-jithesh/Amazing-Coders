@@ -5,7 +5,7 @@ Update with `/feature-done F-xx`. Status: Done / Partial / Planned. Priority: Mo
 
 | ID | Feature | User story | Priority | Status | Code path | Tests | Video | Last verified |
 |----|---------|------------|----------|--------|-----------|-------|-------|---------------|
-| F-01 | 100K-EV simulator with ageing, faults, noise | As an evaluator I can reproduce realistic fleet data from a seed | Must | Planned | services/simulator/ | | | |
+| F-01 | 100K-EV simulator with ageing, faults, noise | As an evaluator I can reproduce realistic fleet data from a seed | Must | Partial (3a: VIN + 100K master data seed) | services/simulator/ | services/simulator/internal/**/*_test.go | | 2026-09-30 |
 | F-02 | Multi-OEM ingestion & normalisation | As a platform team I can onboard an OEM format without downtime | Must | Planned | services/ingest-gateway/ | | | |
 | F-03 | Schema validation, VIN/DTC parsing, dedup, DLQ | As ops I trust bad data never corrupts analytics | Must | Planned | services/ingest-gateway/ | | | |
 | F-04 | Live fleet map (< 2 s) | As a dispatcher I see every vehicle's SoC and location live | Must | Planned | services/stream-processor/, services/fleet-api/, web/ | | | |

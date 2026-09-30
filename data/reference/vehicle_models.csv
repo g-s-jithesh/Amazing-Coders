@@ -1,0 +1,5 @@
+code,name,oem,chemistry,nominal_capacity_kwh,nominal_voltage_v,max_ac_kw,max_dc_kw,consumption_wh_per_km,daily_km_min,daily_km_max,fleet_share
+CV21L,KW Cargo Van 21,oem_a,LFP,21,320,3.3,25,140,80,140,0.35
+SD30L,KW City Sedan 30,oem_b,LFP,30,320,7.2,50,130,120,220,0.30
+DV45N,KW Delivery Van 45,oem_c,NMC,45,350,11,60,190,90,160,0.25
+LT70N,KW Light Truck 70,oem_a,NMC,70,400,22,120,280,100,180,0.10

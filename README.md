@@ -3,18 +3,21 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: foundation only. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> Status: foundation + simulator master data (F-01 partial). See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
 
 ## Quick start
 
-Requires Docker, GNU Make.
+Requires Docker, GNU Make, Go 1.23+.
 
 ```bash
 cp .env.example .env   # dev-only values
 make up                # Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8
-make ps
+make seed              # 100K vehicles of synthetic master data → Postgres (SEED=42 VEHICLES=100000 TENANTS=3)
+make test              # unit tests
 make down              # stop + wipe volumes
 ```
+
+`make seed` needs Go 1.23+. It is deterministic: the same `SEED`/`VEHICLES`/`TENANTS` always produce byte-identical data.
 
 | Service | Address |
 |---------|---------|
