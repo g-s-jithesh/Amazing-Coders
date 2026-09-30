@@ -68,6 +68,14 @@ Any failure → DLQ with its reason, then continue with the next message.
   (root §3.4); the goal is to cut duplicate volume, not to guarantee exactly-once.
 - **Redis down → skip dedup** (downstream sinks are idempotent), increment `dedup_degraded_total`, and don't fail ingestion. This is graceful degradation. Test it.
 
+## MQTT sessions (found in e2e, 2026-09-30)
+
+Consumers use persistent sessions (`clean_session=false`) so unacked QoS 1 messages survive a restart. Client IDs
+must therefore be **stable per replica** (`GATEWAY_MQTT_CLIENT_ID`, e.g. the StatefulSet pod name). With a new ID per
+restart the old session stays in the shared-subscription group and the broker keeps queuing its share for a client that
+never returns: in a local run this parked ~50 % of MQTT traffic. Scaling replicas *down* needs the same care (expire or
+reuse the session). Revisit with MQTT 5 session-expiry on EMQX.
+
 ## Back-pressure (never drop accepted data)
 
 - A bounded channel sits between the pipeline and the Kafka producer. When the producer buffer passes the high watermark:

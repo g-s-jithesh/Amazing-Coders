@@ -74,6 +74,24 @@ services:
       timeout: 5s
       retries: 20
 
+  ingest-gateway:
+    build:
+      context: ../..
+      dockerfile: services/ingest-gateway/Dockerfile
+    ports: ["8081:8081"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      REDIS_URL: redis://redis:6379/0
+      GATEWAY_MQTT_URL: tcp://mosquitto:1883
+      GATEWAY_MQTT_CONNS: "4"
+      GATEWAY_MQTT_CLIENT_ID: ingest-gateway-0
+      GATEWAY_HMAC_KEYS: ${GATEWAY_HMAC_KEYS:-sim=dev-only-hmac-secret:oem_a|oem_b|oem_c}
+      GATEWAY_DEDUP_EPS: "20000"
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+      mosquitto: { condition: service_healthy }
+
   redis:
     image: redis:8.0
     ports: ["6379:6379"]

@@ -1,0 +1,11 @@
+# Keep build contexts small and free of anything sensitive or generated.
+.git
+.claude
+docs
+**/node_modules
+**/*.parquet
+.env
+.env.*
+# Only reference data may enter an image (seed data, simulator truth etc. stay out).
+data/*
+!data/reference

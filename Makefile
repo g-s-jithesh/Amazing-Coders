@@ -20,9 +20,8 @@ BUF := docker run --rm -v "$(CURDIR)/libs/proto:/workspace" -w /workspace bufbui
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
 
-up: ## start the local stack (infra only for now)
-	$(COMPOSE) up -d --wait
-	$(COMPOSE) wait kafka-init
+up: ## build and start the local stack (infra + ingest-gateway)
+	$(COMPOSE) up -d --build --wait
 
 down: ## stop the stack and remove volumes
 	$(COMPOSE) down -v
@@ -51,6 +50,7 @@ test: ## unit tests with coverage (all Go modules)
 
 test-int: ## integration tests against the local stack (make up first)
 	cd services/simulator && go test -tags integration -count=1 ./...
+	cd services/ingest-gateway && go test -tags integration -count=1 ./...
 
 samples: ## regenerate libs/oem-samples golden files from the encoders
 	cd services/simulator && go test ./internal/adapters/encoders -run TestGoldenFiles -update

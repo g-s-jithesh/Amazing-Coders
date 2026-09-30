@@ -3,7 +3,7 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: foundation + simulator master data (F-01 partial). See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> Status: simulator (F-01) and ingest-gateway (F-02/F-03) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
 
 ## Quick start
 
@@ -11,7 +11,7 @@ Requires Docker, GNU Make, Go 1.24+.
 
 ```bash
 cp .env.example .env   # dev-only values
-make up                # Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto
+make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ingest-gateway
 make seed              # 100K vehicles of synthetic master data → Postgres (SEED=42 VEHICLES=100000 TENANTS=3)
 make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in real time; Ctrl-C to stop
 make test              # unit tests
@@ -25,7 +25,7 @@ make down              # stop + wipe volumes
 signed batches) · `kafka-direct` (raw payloads straight to `oem.raw.*`, broker load tests only) · `RATE_HZ` · `SPEEDUP`
 (sim s per wall s; `0` = as fast as possible) · `NOISE=clean|realistic|hostile` · `DURATION=60s` ·
 `INJECT=<VIN>:<fault>` (demo fault, 12 h precursor by default: use `SPEEDUP` to compress it).
-Until the ingest-gateway exists, oem_b batches are counted as `dropped_records` (expected).
+The gateway validates everything; rejects land in `telemetry.dlq.v1` with an `x-dlq-reason` header.
 Golden OEM payloads live in `libs/oem-samples/` (`make samples` regenerates them).
 
 Trace one simulated vehicle (CSV, includes the simulator-only `soh_true` column):
@@ -43,6 +43,7 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | Postgres | `localhost:5432` (db/user `kilowatt`) |
 | Redis | `localhost:6379` |
 | MQTT (Mosquitto, dev: anonymous, no TLS) | `localhost:1883` |
+| ingest-gateway: `POST /ingest/v1/{oem}/batch`, `/healthz`, `/readyz`, `/metrics` | `localhost:8081` |
 
 ## Layout
 
