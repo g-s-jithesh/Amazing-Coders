@@ -17,6 +17,12 @@ make test              # unit tests
 make down              # stop + wipe volumes
 ```
 
+Trace one simulated vehicle (CSV, includes the simulator-only `soh_true` column):
+
+```bash
+cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference --hours 48 --every 60 > trace.csv
+```
+
 `make seed` needs Go 1.23+. It is deterministic: the same `SEED`/`VEHICLES`/`TENANTS` always produce byte-identical data.
 
 | Service | Address |
