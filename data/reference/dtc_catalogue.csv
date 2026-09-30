@@ -1,0 +1,8 @@
+code,system,severity,description,sim_fault,runbook_id,source_status
+P0A7E,powertrain,CRITICAL,Hybrid/EV Battery Pack Over Temperature,cooling_degradation,RB-THERMAL-01,unverified
+P0A7F,powertrain,HIGH,Hybrid/EV Battery Pack Deterioration,cell_drift,RB-CELL-01,unverified
+P0AA6,powertrain,CRITICAL,Hybrid/EV Battery Voltage System Isolation Fault,insulation_wear,RB-ISO-01,unverified
+P0A0A,powertrain,HIGH,High Voltage System Interlock Circuit,connector_issue,RB-HVIL-01,unverified
+P0562,powertrain,MEDIUM,System Voltage Low,weak_aux_battery,RB-AUX12V-01,unverified
+U0111,network,MEDIUM,Lost Communication With Battery Energy Control Module 'A',weak_aux_battery,RB-AUX12V-01,unverified
+U0293,network,MEDIUM,Lost Communication With Hybrid/EV Powertrain Control Module,weak_aux_battery,RB-AUX12V-01,unverified

@@ -1,0 +1,4 @@
+wmi,oem,note
+0KA,oem_a,synthetic: leading '0' is not an assigned ISO 3780 region code so it cannot collide with a real manufacturer
+0KB,oem_b,synthetic: leading '0' is not an assigned ISO 3780 region code so it cannot collide with a real manufacturer
+0KC,oem_c,synthetic: leading '0' is not an assigned ISO 3780 region code so it cannot collide with a real manufacturer

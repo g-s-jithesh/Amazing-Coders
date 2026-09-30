@@ -1,0 +1,75 @@
+# Local dev stack. Services are added here as they are built (see CLAUDE.md §15 build order).
+# Dev-only credentials come from .env (copy .env.example); defaults below are for local use only.
+name: kilowatt
+
+services:
+  kafka:
+    image: apache/kafka:3.9.0
+    ports: ["9092:9092"]
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  # Creates the dev topics from CLAUDE.md §3.3 (dev partition counts, RF=1), then exits.
+  kafka-init:
+    image: apache/kafka:3.9.0
+    depends_on:
+      kafka: { condition: service_healthy }
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -e
+        mk() { /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --replication-factor 1 --topic "$$1" --partitions "$$2" $${3:+--config $$3}; }
+        for oem in oem_a oem_b oem_c; do mk oem.raw.$$oem.v1 6 retention.ms=259200000; done
+        mk telemetry.canonical.v1 6 retention.ms=604800000
+        mk telemetry.dlq.v1 1 retention.ms=1209600000
+        mk telemetry.rollup.1m.v1 3 retention.ms=604800000
+        mk battery.sessions.v1 3 retention.ms=2592000000
+        mk vehicle.state.v1 6 cleanup.policy=compact
+        mk alerts.v1 3 retention.ms=2592000000
+        mk dispatch.commands.v1 3 retention.ms=2592000000
+        mk audit.v1 3 retention.ms=34560000000
+    restart: "no"
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports: ["5432:5432"]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kilowatt}
+      POSTGRES_USER: ${POSTGRES_USER:-kilowatt}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kilowatt-dev-only}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init/postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:8.0
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  pgdata:

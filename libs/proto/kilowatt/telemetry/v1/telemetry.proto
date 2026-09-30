@@ -1,0 +1,59 @@
+// Canonical telemetry event: the contract between ingest-gateway (Go) and every consumer.
+// Evolution rules (CLAUDE.md §4): add fields only; never renumber, reuse or change a field's type.
+syntax = "proto3";
+
+package kilowatt.telemetry.v1;
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/telemetry/v1;telemetryv1";
+
+enum ChargeState {
+  CHARGE_STATE_UNSPECIFIED = 0;
+  CHARGE_STATE_IDLE = 1;
+  CHARGE_STATE_AC = 2;
+  CHARGE_STATE_DC_FAST = 3;
+  CHARGE_STATE_FAULT = 4;
+}
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_PERIODIC = 1;
+  EVENT_TYPE_IGN_ON = 2;
+  EVENT_TYPE_IGN_OFF = 3;
+  EVENT_TYPE_PLUG_IN = 4;
+  EVENT_TYPE_PLUG_OUT = 5;
+  EVENT_TYPE_HARSH_BRAKE = 6;
+  EVENT_TYPE_HARSH_ACCEL = 7;
+  EVENT_TYPE_DTC_RAISED = 8;
+}
+
+message TelemetryEvent {
+  string event_id = 1; // UUIDv7, assigned by the gateway
+  string vin = 2; // 17 chars, check digit validated
+  string oem = 3; // "oem_a" | "oem_b" | "oem_c"
+  int64 ts_event_ms = 4; // vehicle clock, UTC
+  int64 ts_ingest_ms = 5; // gateway clock, UTC
+  uint64 seq = 6; // per-vehicle monotonic counter (dedup key with vin)
+
+  double lat = 7;
+  double lon = 8;
+  float speed_kmh = 9;
+  double odo_km = 10;
+
+  float soc_pct = 11;
+  float pack_voltage_v = 12;
+  float pack_current_a = 13; // + discharge, - charge
+  float pack_temp_min_c = 14;
+  float pack_temp_max_c = 15;
+  uint32 cell_v_min_mv = 16;
+  uint32 cell_v_max_mv = 17;
+  float isolation_kohm = 18;
+  bool hv_interlock_ok = 19;
+  float aux_12v_v = 20;
+  float ambient_c = 21;
+
+  ChargeState charge_state = 22;
+  float charge_power_kw = 23;
+  repeated string dtc = 24; // each matches ^[PCBU][0-3][0-9A-F]{3}$
+  EventType evt = 25;
+  uint32 schema_version = 26;
+}
