@@ -1,9 +1,10 @@
 // Package redis is the exact dedup store behind the Bloom filter: SET dedup:{vin}:{seq} 1 NX EX 600.
-// ConfirmNew is one pipelined round trip per message; Remember batches first sightings every
-// FlushEvery (never per event) and drops batches if Redis is slow (dedup is best-effort).
+// Seen is one read-only pipelined round trip per message (Bloom hits only); Remember batches the keys
+// of records Kafka already acknowledged, every FlushEvery (never per event), and drops batches if
+// Redis is slow (dedup is best-effort, sinks are idempotent).
 //
-// Keys remembered but not yet flushed are kept in an in-memory pending set that ConfirmNew checks
-// first: a duplicate usually arrives milliseconds after its original, i.e. before the batch lands.
+// Keys remembered but not yet flushed are kept in an in-memory pending set that Seen also checks: a
+// duplicate usually arrives milliseconds after its original, i.e. before the batch lands.
 // (Measured: without this, only 48 of ~3,300 simulator duplicates were caught.) Size is bounded by
 // eps × flush interval (~5K keys at 100K eps, 50 ms).
 package redis
@@ -40,12 +41,16 @@ func New(url string, flushEvery time.Duration) (*Confirmer, error) {
 	return c, nil
 }
 
-func (c *Confirmer) ConfirmNew(ctx context.Context, keys []string) ([]bool, error) {
+// Seen checks the pending set (remembered, not yet flushed) and then Redis (one pipelined EXISTS
+// round trip). It writes nothing.
+func (c *Confirmer) Seen(ctx context.Context, keys []string) ([]bool, error) {
 	out := make([]bool, len(keys))
-	var ask []int // keys not in the pending set go to Redis
+	var ask []int
 	c.mu.Lock()
 	for i, k := range keys {
-		if _, seen := c.pending[k]; !seen {
+		if _, ok := c.pending[k]; ok {
+			out[i] = true
+		} else {
 			ask = append(ask, i)
 		}
 	}
@@ -54,15 +59,15 @@ func (c *Confirmer) ConfirmNew(ctx context.Context, keys []string) ([]bool, erro
 		return out, nil
 	}
 	pipe := c.rdb.Pipeline()
-	cmds := make([]*goredis.BoolCmd, len(ask))
+	cmds := make([]*goredis.IntCmd, len(ask))
 	for j, i := range ask {
-		cmds[j] = pipe.SetNX(ctx, keys[i], 1, ttl)
+		cmds[j] = pipe.Exists(ctx, keys[i])
 	}
 	if _, err := pipe.Exec(ctx); err != nil {
 		return nil, err
 	}
 	for j, i := range ask {
-		out[i] = cmds[j].Val()
+		out[i] = cmds[j].Val() > 0
 	}
 	return out, nil
 }

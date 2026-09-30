@@ -9,3 +9,4 @@ Create new ones with `/new-adr <title>` in Claude Code. Format: Context → Driv
 | 0003 | pgvector over a dedicated vector DB | Planned | — |
 | 0004 | At-least-once + idempotent sinks vs exactly-once transactions | Planned | — |
 | 0005 | Go hot path, Python analytics/API, Protobuf boundary | Planned | — |
+| 0006 | [Vehicle registry as a compacted Kafka topic](0006-vehicle-registry-compacted-topic.md) | Accepted | 2026-09-30 |

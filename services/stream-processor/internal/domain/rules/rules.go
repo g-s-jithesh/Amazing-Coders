@@ -11,6 +11,7 @@ package rules
 import (
 	"math"
 	"sort"
+	"strings"
 
 	"github.com/g-s-jithesh/Amazing-Coders/services/stream-processor/internal/domain/alert"
 	"github.com/g-s-jithesh/Amazing-Coders/services/stream-processor/internal/domain/event"
@@ -338,4 +339,55 @@ func (v *Vehicle) Firing() []string {
 	}
 	sort.Strings(out)
 	return out
+}
+
+// MachineSnap / Snapshot capture a vehicle's rule state so a partition can move between replicas
+// without re-firing open episodes (the same episode keeps the same window start, hence the same id).
+type MachineSnap struct {
+	Key                      string
+	Phase                    uint8
+	StartMs, ClearMs, LastMs int64
+}
+
+type Snapshot struct {
+	LastTsMs            int64
+	IgnOn               bool
+	DeltaMean, DeltaVar float64
+	DeltaN              int
+	ActiveDTC           []string
+	Machines            []MachineSnap
+}
+
+func (v *Vehicle) Snapshot() Snapshot {
+	s := Snapshot{LastTsMs: v.LastTsMs, IgnOn: v.ignOn, DeltaMean: v.delta.Mean, DeltaVar: v.delta.Var, DeltaN: v.delta.N}
+	for c := range v.activeDTC {
+		s.ActiveDTC = append(s.ActiveDTC, c)
+	}
+	sort.Strings(s.ActiveDTC)
+	for k, m := range v.machines {
+		if m.Phase != alert.OK {
+			s.Machines = append(s.Machines, MachineSnap{k, uint8(m.Phase), m.StartMs, m.ClearMs, m.LastMs})
+		}
+	}
+	sort.Slice(s.Machines, func(i, j int) bool { return s.Machines[i].Key < s.Machines[j].Key })
+	return s
+}
+
+// Restore rebuilds a vehicle's rule state from a snapshot (sustain/hysteresis come from current config).
+func (e *Engine) Restore(s Snapshot) *Vehicle {
+	v := NewVehicle()
+	v.LastTsMs, v.ignOn = s.LastTsMs, s.IgnOn
+	v.delta = ewma.EWMA{Mean: s.DeltaMean, Var: s.DeltaVar, N: s.DeltaN}
+	for _, c := range s.ActiveDTC {
+		v.activeDTC[c] = true
+	}
+	for _, ms := range s.Machines {
+		rule := ms.Key
+		if i := strings.IndexByte(rule, '|'); i >= 0 {
+			rule = rule[:i]
+		}
+		m := e.machine(v, ms.Key, e.cfg.Rules[rule])
+		m.Phase, m.StartMs, m.ClearMs, m.LastMs = alert.Phase(ms.Phase), ms.StartMs, ms.ClearMs, ms.LastMs
+	}
+	return v
 }

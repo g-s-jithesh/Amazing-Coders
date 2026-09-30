@@ -11,6 +11,7 @@ require (
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/g-s-jithesh/Amazing-Coders/libs/go-common v0.0.0
+	github.com/g-s-jithesh/Amazing-Coders/libs/proto v0.0.0
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
@@ -22,7 +23,9 @@ require (
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
-	google.golang.org/protobuf v1.34.2 // indirect
+	google.golang.org/protobuf v1.36.6
 )
 
 replace github.com/g-s-jithesh/Amazing-Coders/libs/go-common => ../../libs/go-common
+
+replace github.com/g-s-jithesh/Amazing-Coders/libs/proto => ../../libs/proto

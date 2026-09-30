@@ -1,0 +1,36 @@
+// Real-time alerts from stream-processor (topic alerts.v1, key = VIN). Idempotent by alert_id.
+syntax = "proto3";
+
+package kilowatt.alerts.v1;
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/alerts/v1;alertsv1";
+
+enum Severity {
+  SEVERITY_UNSPECIFIED = 0;
+  SEVERITY_INFO = 1;
+  SEVERITY_WARNING = 2; // also DTC catalogue MEDIUM
+  SEVERITY_HIGH = 3;
+  SEVERITY_CRITICAL = 4;
+}
+
+enum AlertState {
+  ALERT_STATE_UNSPECIFIED = 0;
+  ALERT_STATE_FIRING = 1;
+  ALERT_STATE_RESOLVED = 2;
+}
+
+message Alert {
+  string alert_id = 1; // UUIDv5(vin|rule:severity[:code]|window_start_ms): same episode → same id
+  string vin = 2;
+  string tenant_id = 3; // "" if the VIN is not in the registry yet
+  string fleet_id = 4;
+  string rule_id = 5; // e.g. THERMAL_OVERTEMP, DTC_RAISED
+  Severity severity = 6;
+  AlertState state = 7;
+  int64 window_start_ms = 8; // episode start (event time)
+  int64 ts_event_ms = 9; // event time of the triggering sample
+  int64 trigger_ingest_ms = 10; // gateway receive time of the triggering sample (latency measurement)
+  int64 processed_ms = 11; // stream-processor wall clock at emit
+  map<string, double> evidence = 12; // signal values and thresholds that triggered it
+  string detail = 13; // e.g. the DTC code
+}

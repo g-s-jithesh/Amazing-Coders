@@ -61,7 +61,16 @@ Any failure → DLQ with its reason, then continue with the next message.
 ## Dedup (root §3.4)
 
 - A rotating pair of Bloom filters over `(vin, seq)` with a 10-min window and 1% FPR, sized from the configured eps.
-- A Bloom hit → Redis `SET dedup:{vin}:{seq} 1 NX EX 600`. Only drop the event when Redis confirms it has been seen.
+- A Bloom hit → a **read-only** Redis check (`EXISTS dedup:{vin}:{seq}`, plus the not-yet-flushed pending set). Only drop
+  the event when it has been recorded. Keys are recorded (`SET … NX EX 600`, batched) **only after Kafka acknowledged the
+  records**. Found in e2e (2026-10-01): recording before the produce meant a produce that failed ("no usable
+  partitions") left dedup state behind, and the sender's retry of those same records was dropped as a "duplicate" —
+  silent loss. Regression test: `TestFailedProduceIsNotRememberedAsSeen`.
+- **In-flight set:** a Bloom hit whose key belongs to a record currently being produced (another delivery) is dropped
+  without a Redis call. Safe because a failed produce is never acknowledged, so the original's sender retries it, and
+  the failure clears the in-flight mark. Without it, recording-after-produce let almost all simulator duplicates
+  through (307 caught of ~19K; they arrive within milliseconds of the original). Test:
+  `TestInFlightDuplicateDroppedWithoutLoss`.
 - **Decision (2026-09-30):** only Bloom *hits* (~1 % duplicates + ~1 % false positives) make a synchronous Redis
   call. First sightings are written to Redis asynchronously in pipelined batches (never per event). A duplicate that
   races its original, or lands on another replica, can therefore pass: acceptable because every sink is idempotent

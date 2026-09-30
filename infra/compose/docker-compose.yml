@@ -41,6 +41,7 @@ services:
         mk telemetry.rollup.1m.v1 3 retention.ms=604800000
         mk battery.sessions.v1 3 retention.ms=2592000000
         mk vehicle.state.v1 6 cleanup.policy=compact
+        mk fleet.vehicle.v1 6 cleanup.policy=compact
         mk alerts.v1 3 retention.ms=2592000000
         mk dispatch.commands.v1 3 retention.ms=2592000000
         mk audit.v1 3 retention.ms=34560000000
@@ -91,6 +92,55 @@ services:
       kafka-init: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
       mosquitto: { condition: service_healthy }
+
+  # Two roles of one image, each with its own consumer group (see services/stream-processor/CLAUDE.md):
+  # processor = rules, alerts, sessions, rollups, state, live map; raw-sink = Scylla telemetry_raw.
+  stream-processor:
+    build:
+      context: ../..
+      dockerfile: services/stream-processor/Dockerfile
+    ports: ["9102:9102"]
+    environment:
+      SP_ROLE: processor
+      KAFKA_BOOTSTRAP: kafka:29092
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      redis: { condition: service_healthy }
+
+  stream-processor-raw:
+    build:
+      context: ../..
+      dockerfile: services/stream-processor/Dockerfile
+    ports: ["9103:9102"]
+    environment:
+      SP_ROLE: raw-sink
+      KAFKA_BOOTSTRAP: kafka:29092
+      SCYLLA_HOSTS: scylla:9042
+    depends_on:
+      kafka-init: { condition: service_completed_successfully }
+      scylla-init: { condition: service_completed_successfully }
+
+  scylla:
+    image: scylladb/scylla:6.2
+    command: --smp 2 --memory 2G --overprovisioned 1 --developer-mode 1 --api-address 0.0.0.0
+    ports: ["9042:9042"]
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'SELECT now() FROM system.local' >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 30s
+
+  # Applies services/stream-processor/cql/*.cql (idempotent), then exits.
+  scylla-init:
+    image: scylladb/scylla:6.2
+    depends_on:
+      scylla: { condition: service_healthy }
+    entrypoint: ["/bin/bash", "-c", "for f in /cql/*.cql; do cqlsh scylla -f $$f || exit 1; done"]
+    volumes:
+      - ../../services/stream-processor/cql:/cql:ro
+    restart: "no"
 
   redis:
     image: redis:8.0

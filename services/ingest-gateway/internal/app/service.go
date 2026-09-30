@@ -57,11 +57,13 @@ type Encoder interface {
 	Marshal(e *canonical.Event) ([]byte, error)
 }
 
-// Confirmer is the exact dedup store (Redis).
+// Confirmer is the exact dedup store (Redis). Seen is read-only; keys are recorded with Remember
+// only after the records were acknowledged by Kafka, so a failed produce leaves no dedup state
+// behind and the sender's retry is never mistaken for a duplicate (that would be silent loss).
 type Confirmer interface {
-	// ConfirmNew atomically records keys and reports, per key, whether it was new.
-	ConfirmNew(ctx context.Context, keys []string) ([]bool, error)
-	// Remember records keys asynchronously (first sightings); must not block.
+	// Seen reports, per key, whether it was already recorded.
+	Seen(ctx context.Context, keys []string) ([]bool, error)
+	// Remember records keys asynchronously; must not block.
 	Remember(keys []string)
 }
 
@@ -97,8 +99,9 @@ type Service struct {
 	Observer  Observer
 	Now       func() time.Time
 
-	mu    sync.Mutex
-	bloom *dedup.Rotating
+	mu       sync.Mutex
+	bloom    *dedup.Rotating
+	inflight map[string]int // keys of records whose produce is in progress
 }
 
 // NewService completes s (Bloom pair sized for eps events/s over a 10-minute window) and returns it.
@@ -107,6 +110,7 @@ func NewService(eps int, s *Service) *Service {
 		s.Now = time.Now
 	}
 	s.bloom = dedup.NewRotating(eps*300, 0.01, 600_000, s.Now().UnixMilli())
+	s.inflight = map[string]int{}
 	return s
 }
 
@@ -191,8 +195,9 @@ func (s *Service) Handle(ctx context.Context, m Message) (Result, error) {
 		valid = append(valid, r)
 	}
 
-	// 10. dedup
-	valid = s.dedup(ctx, valid, nowMs, &res)
+	// 10. dedup (nothing is recorded until Kafka acknowledged; kept keys are marked in flight)
+	valid, keys := s.dedup(ctx, valid, nowMs, &res)
+	defer s.release(keys)
 
 	// 11–12. enrich + publish canonical
 	for i := range valid {
@@ -208,6 +213,9 @@ func (s *Service) Handle(ctx context.Context, m Message) (Result, error) {
 	if err := s.produce(ctx, outs); err != nil {
 		return res, err
 	}
+	if s.Confirmer != nil && len(keys) > 0 {
+		s.Confirmer.Remember(keys)
+	}
 	s.Observer.Accepted(m.OEM, res.Accepted)
 	return res, nil
 }
@@ -216,62 +224,84 @@ func dedupKey(vin string, seq uint64) string {
 	return "dedup:" + vin + ":" + strconv.FormatUint(seq, 10)
 }
 
-// dedup drops records the Bloom filter has maybe seen AND Redis confirms were seen. Bloom misses
-// are kept and remembered in Redis asynchronously. If Redis fails, everything is kept (degraded).
-func (s *Service) dedup(ctx context.Context, recs []canonical.Record, nowMs int64, res *Result) []canonical.Record {
+// dedup drops a record when the Bloom filter has maybe seen it AND either (a) an identical record
+// from another delivery is being produced right now (in flight), or (b) the confirmer has recorded
+// it. It records nothing durable: the caller remembers the kept keys after Kafka acknowledged them,
+// and releases the in-flight marks either way (defer s.release).
+//
+// Why dropping (a) is safe: if the in-flight original's produce fails, its delivery is not
+// acknowledged (no MQTT ack / HTTP 503), so its sender retries it; that retry finds neither an
+// in-flight mark nor a recorded key and is accepted. If the confirmer fails, everything not in
+// flight is kept (degraded; sinks are idempotent).
+func (s *Service) dedup(ctx context.Context, recs []canonical.Record, nowMs int64, res *Result) ([]canonical.Record, []string) {
+	drop := map[int]bool{}
 	var hitIdx []int
-	var newKeys []string
 	s.mu.Lock()
 	for i := range recs {
-		e := &recs[i].Event
-		if s.bloom.SeenOrAdd(e.VIN, e.Seq, nowMs) {
+		k := dedupKey(recs[i].Event.VIN, recs[i].Event.Seq)
+		switch {
+		case !s.bloom.SeenOrAdd(recs[i].Event.VIN, recs[i].Event.Seq, nowMs):
+			s.inflight[k]++ // definitely new
+		case s.inflight[k] > 0:
+			drop[i] = true // duplicate of a record being produced right now
+		default:
 			hitIdx = append(hitIdx, i)
-		} else {
-			newKeys = append(newKeys, dedupKey(e.VIN, e.Seq))
 		}
-	}
-	// Remember under the Bloom lock: a concurrent duplicate that hits the Bloom filter must find the
-	// key at least in the confirmer's pending set.
-	if s.Confirmer != nil && len(newKeys) > 0 {
-		s.Confirmer.Remember(newKeys)
 	}
 	s.mu.Unlock()
-	if s.Confirmer == nil {
-		if len(hitIdx) > 0 {
-			s.Observer.DedupDegraded()
+
+	if len(hitIdx) > 0 {
+		var seen []bool
+		var err error
+		if s.Confirmer != nil {
+			keys := make([]string, len(hitIdx))
+			for j, i := range hitIdx {
+				keys[j] = dedupKey(recs[i].Event.VIN, recs[i].Event.Seq)
+			}
+			seen, err = s.Confirmer.Seen(ctx, keys)
 		}
-		return recs
-	}
-	if len(hitIdx) == 0 {
-		return recs
-	}
-	keys := make([]string, len(hitIdx))
-	for j, i := range hitIdx {
-		keys[j] = dedupKey(recs[i].Event.VIN, recs[i].Event.Seq)
-	}
-	isNew, err := s.Confirmer.ConfirmNew(ctx, keys)
-	if err != nil || len(isNew) != len(keys) {
-		s.Observer.DedupDegraded() // Redis down: keep everything, sinks are idempotent
-		return recs
-	}
-	drop := map[int]bool{}
-	for j, i := range hitIdx {
-		if !isNew[j] {
-			drop[i] = true
+		if s.Confirmer == nil || err != nil || len(seen) != len(hitIdx) {
+			s.Observer.DedupDegraded() // no confirmer / Redis down: keep, sinks are idempotent
+			seen = make([]bool, len(hitIdx))
 		}
+		s.mu.Lock()
+		for j, i := range hitIdx {
+			if seen[j] {
+				drop[i] = true
+			} else {
+				s.inflight[dedupKey(recs[i].Event.VIN, recs[i].Event.Seq)]++
+			}
+		}
+		s.mu.Unlock()
 	}
-	if len(drop) == 0 {
-		return recs
-	}
+
 	kept := recs[:0]
+	keys := make([]string, 0, len(recs)-len(drop))
 	for i, r := range recs {
 		if !drop[i] {
 			kept = append(kept, r)
+			keys = append(keys, dedupKey(r.Event.VIN, r.Event.Seq))
 		}
 	}
-	res.Duplicates = len(drop)
-	s.Observer.Duplicates(len(drop))
-	return kept
+	if len(drop) > 0 {
+		res.Duplicates = len(drop)
+		s.Observer.Duplicates(len(drop))
+	}
+	return kept, keys
+}
+
+// release clears in-flight marks once a produce finished (successfully or not).
+func (s *Service) release(keys []string) {
+	if len(keys) == 0 {
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, k := range keys {
+		if s.inflight[k]--; s.inflight[k] <= 0 {
+			delete(s.inflight, k)
+		}
+	}
 }
 
 // UUIDv7 returns an RFC 9562 version-7 UUID: 48-bit Unix ms timestamp, then random bits.

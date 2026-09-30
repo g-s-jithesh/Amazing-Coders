@@ -112,6 +112,7 @@ Vehicle/OEM cloud ──MQTT(mTLS, QoS1) / HTTPS batch──▶ ingest-gateway  
 | `telemetry.rollup.1m.v1` | VIN | 24 / 3 | 7 d | |
 | `battery.sessions.v1` | VIN | 24 / 3 | 30 d | charge / drive session start/stop (event-sourced) |
 | `vehicle.state.v1` | VIN | 48 / 6 | compacted | latest state; rebuilds Redis after loss |
+| `fleet.vehicle.v1` | VIN | 48 / 6 | compacted | vehicle registry (tenant, fleet, depot, duty); owned by fleet-api, ADR-0006 |
 | `alerts.v1` | VIN | 12 / 3 | 30 d | |
 | `dispatch.commands.v1` | depot_id | 12 / 3 | 30 d | published through the outbox only |
 | `audit.v1` | tenant_id | 12 / 3 | 400 d → archived | append-only |

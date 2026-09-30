@@ -54,7 +54,27 @@ config/rules.yaml
 - **Sessions:** `v_rest_before` only for now; `v_rest_after` (needs 30 min of rest after the session) is a follow-up
   record for battery-intel when it needs it. Rollup energy = mean V·I × 1 min (order-independent approximation).
 - **Vehicle registry** (tenant, fleet, depot, duty, capacity): consumed from the compacted `fleet.vehicle.v1` topic
-  (ADR-0006), never from fleet-api's schema.
+  (ADR-0006), never from fleet-api's schema. "Caught up" is judged against end offsets listed up front (`kadm`), because
+  empty partitions return no fetch data.
+
+### Two roles, two consumer groups (2026-10-01, found in e2e runs)
+
+The service runs as `SP_ROLE=processor` (group `stream-processor`: rules, alerts, sessions, rollups, state, live map)
+and `SP_ROLE=raw-sink` (group `stream-processor-raw`: Scylla `telemetry_raw`); `all` runs both in one process.
+Evidence: with Scylla on the alert path, a single-core dev Scylla (~2.6–5.3K rows/s) backed the whole pipeline up
+and a demo P0A7E alert took 21–50 s; async raw writes with a bounded queue only delayed the coupling. With separate
+groups a slow raw store shows up only as raw-sink lag; each group commits after its own sinks succeed
+(at-least-once, idempotent sinks). In K8s they are separate deployments and scale independently.
+
+Other findings from the same runs:
+- Scylla `dtc` is `frozen<list<text>>` and absent columns are bound as `UnsetValue`: a non-frozen collection writes a
+  range tombstone per INSERT and binding null writes a tombstone per cell (together they halved write throughput).
+- The raw sink retries only the failed rows of a batch, so an overloaded Scylla is not hit again with rows that
+  already succeeded.
+- `vehicle.state.v1` snapshots every 5 min per vehicle (plus on every alert change), not every 30 s: at 100K vehicles
+  the 30 s cadence kept the single broker's log cleaner at ~250 % CPU.
+- Polls use a 250 ms timeout so processing-time jobs (stale sweep, top-K) run even when input is idle.
+- `/healthz` starts before any dependency wait (liveness must not depend on the registry or Scylla).
 
 ## Rules (thresholds in `config/rules.yaml`, never hard-coded)
 
@@ -85,7 +105,7 @@ Drive sessions work the same way (distance, energy, kWh/km).
 
 ## Sinks and commits
 
-- Scylla: async writes with bounded concurrency. Batch **only within a partition key** (unlogged). Prepared statements. CL = ONE.
+- Scylla (raw-sink role): bounded-concurrency single-row upserts, prepared statements, CL = ONE; per-row retry of failures.
 - Redis: pipelined HSET + GEOADD per poll batch. Publish deltas at most 1/s per vehicle.
 - **Commit offsets only after all sink writes for the batch succeed.** On a sink failure, retry with backoff. If it keeps failing, pause the partition (back-pressure) rather than skipping.
 - If Redis is unavailable, the live map degrades but alerts and Scylla continue. Metric + log, no crash.

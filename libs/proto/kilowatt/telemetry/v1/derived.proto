@@ -1,0 +1,58 @@
+// Derived telemetry from stream-processor.
+syntax = "proto3";
+
+package kilowatt.telemetry.v1;
+
+import "kilowatt/telemetry/v1/telemetry.proto";
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/telemetry/v1;telemetryv1";
+
+// One vehicle-minute (topic telemetry.rollup.1m.v1, key = VIN).
+message Rollup1m {
+  string vin = 1;
+  int64 minute_start_ms = 2;
+  int32 count = 3;
+  double soc_min_pct = 4;
+  double soc_max_pct = 5;
+  double soc_avg_pct = 6;
+  double speed_avg_kmh = 7;
+  double distance_km = 8;
+  double energy_kwh = 9; // + discharge, − charge
+  double charge_kwh_grid = 10;
+  optional double temp_max_c = 11;
+  optional double imbalance_max_mv = 12;
+  double isolation_min_kohm = 13;
+}
+
+// Latest state per vehicle (topic vehicle.state.v1, compacted, key = VIN): rebuilds Redis after loss
+// and the stream-processor's rule state after a partition moves.
+message VehicleState {
+  string vin = 1;
+  int64 ts_event_ms = 2;
+  double lat = 3;
+  double lon = 4;
+  double speed_kmh = 5;
+  double soc_pct = 6;
+  double pack_temp_max_c = 7;
+  ChargeState charge_state = 8;
+  repeated string firing = 9; // rule keys currently firing
+  RuleSnapshot rules = 10;
+}
+
+message RuleSnapshot {
+  int64 last_ts_ms = 1;
+  bool ign_on = 2;
+  double delta_mean = 3;
+  double delta_var = 4;
+  int32 delta_n = 5;
+  repeated string active_dtc = 6;
+  repeated MachineState machines = 7;
+}
+
+message MachineState {
+  string key = 1;
+  int32 phase = 2;
+  int64 start_ms = 3;
+  int64 clear_ms = 4;
+  int64 last_ms = 5;
+}

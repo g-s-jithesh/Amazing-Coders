@@ -308,3 +308,31 @@ func TestDisabledAndMissingGroups(t *testing.T) {
 		t.Fatal("nothing should be firing")
 	}
 }
+
+// A partition that moves mid-episode must not re-fire: the restored vehicle keeps the episode.
+func TestSnapshotRestoreKeepsEpisodes(t *testing.T) {
+	r := newRun(t)
+	out := r.feed(0, 60, 10, func(e *event.Event) { e.PackTempMaxC, e.DTC = 60, []string{"P0A7E"} })
+	fired := len(only(out, ThermalOvertemp, "FIRING")) + len(only(out, DTCRaised, "FIRING"))
+	if fired != 3 {
+		t.Fatalf("setup fired %d", fired)
+	}
+	snap := r.v.Snapshot()
+	moved := &run{r.e, r.e.Restore(snap)}
+	out = moved.feed(70, 200, 10, func(e *event.Event) { e.PackTempMaxC, e.DTC = 60, []string{"P0A7E"} })
+	if len(only(out, ThermalOvertemp, "FIRING"))+len(only(out, DTCRaised, "FIRING")) != 0 {
+		t.Fatalf("restored state re-fired: %+v", out)
+	}
+	if got := moved.v.Firing(); len(got) != 3 {
+		t.Fatalf("firing after restore: %v", got)
+	}
+	// And it still resolves with the original episode id.
+	out = moved.feed(210, 600, 10, nil)
+	res := only(out, ThermalOvertemp, "RESOLVED")
+	if len(res) != 2 || res[0].WindowStartMs != 0 {
+		t.Fatalf("resolve after restore: %+v", res)
+	}
+	if moved.v.LastTsMs != 600_000 || len(snap.ActiveDTC) != 1 {
+		t.Fatalf("snapshot fields: %+v", snap)
+	}
+}

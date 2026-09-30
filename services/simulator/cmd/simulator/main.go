@@ -7,6 +7,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/adapters/refdata"
+	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/adapters/registry"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/adapters/seed"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/app"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/env"
@@ -51,6 +53,7 @@ func runSeed(args []string) error {
 	tenants := fs.Int("tenants", 3, "number of tenants")
 	ref := fs.String("ref", "data/reference", "reference data directory")
 	out := fs.String("out", "data/seed", "output directory for CSVs")
+	publish := fs.String("publish-registry", "", "Kafka brokers: also publish fleet.vehicle.v1 (ADR-0006); empty = skip")
 	_ = fs.Parse(args)
 
 	models, err := refdata.Models(*ref)
@@ -68,6 +71,18 @@ func runSeed(args []string) error {
 	}
 	if err := seed.Write(*out, ds, models); err != nil {
 		return err
+	}
+	if *publish != "" {
+		recs, err := registry.Records(ds, models)
+		if err != nil {
+			return err
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if err := registry.Publish(ctx, strings.Split(*publish, ","), recs); err != nil {
+			return fmt.Errorf("publish registry: %w", err)
+		}
+		slog.Info("registry published", "topic", registry.Topic, "vehicles", len(recs))
 	}
 	slog.Info("seed written", "out", *out, "tenants", len(ds.Tenants), "fleets", len(ds.Fleets), "depots", len(ds.Depots),
 		"vehicles", len(ds.Vehicles), "sites", len(ds.Sites), "chargers", len(ds.Chargers), "elapsed", time.Since(start).Round(time.Millisecond))

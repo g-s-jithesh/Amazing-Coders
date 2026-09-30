@@ -1,0 +1,41 @@
+// Charge and drive sessions (topic battery.sessions.v1, key = VIN), event-sourced: START then END.
+// Sign convention: + discharge, − charge (a charge session has negative delta_ah).
+syntax = "proto3";
+
+package kilowatt.sessions.v1;
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/sessions/v1;sessionsv1";
+
+enum Kind {
+  KIND_UNSPECIFIED = 0;
+  KIND_CHARGE = 1;
+  KIND_DRIVE = 2;
+}
+
+enum Phase {
+  PHASE_UNSPECIFIED = 0;
+  PHASE_START = 1;
+  PHASE_END = 2;
+}
+
+message Session {
+  string session_id = 1; // UUIDv5(vin|kind|start_ms)
+  string vin = 2;
+  string tenant_id = 3;
+  Kind kind = 4;
+  Phase phase = 5;
+  int64 start_ms = 6;
+  int64 end_ms = 7; // END only
+  double soc_start_pct = 8;
+  double soc_end_pct = 9;
+  double delta_ah = 10;
+  double delta_kwh = 11;
+  optional double v_rest_before = 12; // set when the pack rested ≥ 30 min before the start
+  double temp_min_c = 13;
+  double temp_max_c = 14;
+  double max_c_rate = 15;
+  string charger_type = 16; // AC | DC_FAST (charge)
+  double distance_km = 17; // drive
+  int32 gaps = 18; // intervals > 5 min that were not integrated
+  int32 samples = 19;
+}

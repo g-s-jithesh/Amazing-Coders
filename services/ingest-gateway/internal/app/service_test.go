@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -55,14 +56,13 @@ type fakeConfirmer struct {
 	remembered int
 }
 
-func (f *fakeConfirmer) ConfirmNew(_ context.Context, keys []string) ([]bool, error) {
+func (f *fakeConfirmer) Seen(_ context.Context, keys []string) ([]bool, error) {
 	if f.err != nil {
 		return nil, f.err
 	}
 	out := make([]bool, len(keys))
 	for i, k := range keys {
-		out[i] = !f.seen[k]
-		f.seen[k] = true
+		out[i] = f.seen[k]
 	}
 	return out, nil
 }
@@ -299,5 +299,75 @@ func TestUUIDv7(t *testing.T) {
 	}
 	if app.RawTopic("oem_a") != "oem.raw.oem_a.v1" {
 		t.Fatal("raw topic name")
+	}
+}
+
+// Regression (found in e2e): dedup state must only be recorded after Kafka acknowledged. A produce
+// that fails must leave no trace, so the sender's retry is processed, not dropped as a duplicate.
+func TestFailedProduceIsNotRememberedAsSeen(t *testing.T) {
+	msg := app.Message{OEM: "oem_c", TopicVIN: goldenVIN, Body: golden(t, "oem_c", "valid.txt")}
+	p, conf := &fakeProducer{err: errors.New("unable to partition record")}, &fakeConfirmer{seen: map[string]bool{}}
+	svc, _ := newSvc(p, conf)
+	if _, err := svc.Handle(context.Background(), msg); err == nil {
+		t.Fatal("want produce error")
+	}
+	if conf.remembered != 0 {
+		t.Fatalf("remembered %d keys for records Kafka never acknowledged", conf.remembered)
+	}
+	p.err = nil // Kafka back; the sender retries the same message
+	res, err := svc.Handle(context.Background(), msg)
+	if err != nil || res.Accepted != 1 || res.Duplicates != 0 || len(p.topic(app.TopicCanonical)) != 1 {
+		t.Fatalf("retry after a failed produce must be accepted, got %+v err=%v", res, err)
+	}
+	if conf.remembered != 1 {
+		t.Fatalf("remembered %d, want 1 after the successful produce", conf.remembered)
+	}
+}
+
+// gateProducer blocks only its first Produce call (the "original") until released with an error or
+// nil; every later call goes straight through.
+type gateProducer struct {
+	fakeProducer
+	n       atomic.Int32
+	entered chan struct{}
+	release chan error
+}
+
+func (g *gateProducer) Produce(ctx context.Context, outs []app.Out) error {
+	if g.n.Add(1) == 1 {
+		g.entered <- struct{}{}
+		if err := <-g.release; err != nil {
+			return err
+		}
+	}
+	return g.fakeProducer.Produce(ctx, outs)
+}
+
+// A second delivery that arrives while the original is being produced is dropped; if the original's
+// produce then fails, the original's retry is still accepted (nothing lost).
+func TestInFlightDuplicateDroppedWithoutLoss(t *testing.T) {
+	msg := app.Message{OEM: "oem_c", TopicVIN: goldenVIN, Body: golden(t, "oem_c", "valid.txt")}
+	g := &gateProducer{entered: make(chan struct{}, 1), release: make(chan error, 1)}
+	svc, _ := newSvc(g, &fakeConfirmer{seen: map[string]bool{}})
+
+	firstErr := make(chan error, 1)
+	go func() { _, err := svc.Handle(context.Background(), msg); firstErr <- err }()
+	<-g.entered // the original is in flight
+
+	res, err := svc.Handle(context.Background(), msg) // second delivery of the same record
+	if err != nil || res.Duplicates != 1 || res.Accepted != 0 {
+		t.Fatalf("duplicate during in-flight original: %+v err=%v", res, err)
+	}
+
+	g.release <- errors.New("kafka down") // the original fails, is not acked, and its sender retries
+	if err := <-firstErr; err == nil {
+		t.Fatal("original produce must fail")
+	}
+	res, err = svc.Handle(context.Background(), msg)
+	if err != nil || res.Accepted != 1 || res.Duplicates != 0 {
+		t.Fatalf("retry of the failed original must be accepted: %+v err=%v", res, err)
+	}
+	if n := len(g.topic(app.TopicCanonical)); n != 1 {
+		t.Fatalf("canonical records %d, want exactly 1", n)
 	}
 }

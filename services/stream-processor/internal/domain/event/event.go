@@ -46,6 +46,6 @@ func (e *Event) Imbalance() float64 { return e.CellVMaxMv - e.CellVMinMv }
 type Vehicle struct {
 	VIN, TenantID, FleetID, DepotID string
 	DepotLat, DepotLon              float64
-	CapacityKWh, WhPerKm            float64
+	CapacityKWh, WhPerKm, NominalV  float64
 	DepartMinIST, ReturnMinIST      int
 }

@@ -1,0 +1,22 @@
+// Vehicle registry (topic fleet.vehicle.v1, compacted, key = VIN). Owned and published by fleet-api
+// (bootstrapped by `make seed` until fleet-api exists). See docs/adr/0006.
+syntax = "proto3";
+
+package kilowatt.fleet.v1;
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/fleet/v1;fleetv1";
+
+message Vehicle {
+  string vin = 1;
+  string tenant_id = 2;
+  string fleet_id = 3;
+  string depot_id = 4;
+  double depot_lat = 5;
+  double depot_lon = 6;
+  string model_code = 7;
+  double capacity_kwh = 8;
+  double wh_per_km = 9;
+  int32 depart_min_ist = 10; // duty window, IST minute of day; return < depart = crosses midnight
+  int32 return_min_ist = 11;
+  double nominal_voltage_v = 12; // pack nominal voltage (C-rate from kWh capacity)
+}

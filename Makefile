@@ -15,7 +15,7 @@ NOISE ?= realistic
 SIM := cd services/simulator && go run ./cmd/simulator
 BUF := docker run --rm -v "$(CURDIR)/libs/proto:/workspace" -w /workspace bufbuild/buf:1.47.2
 
-.PHONY: help up down ps logs seed sim test test-int samples proto-gen proto-lint proto-breaking
+.PHONY: help up down ps logs seed sim e2e test test-int samples proto-gen proto-lint proto-breaking
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -33,21 +33,24 @@ logs: ## follow logs (S=<service> to filter)
 	$(COMPOSE) logs -f $(S)
 
 seed: ## generate master data (SEED, VEHICLES, TENANTS) and load it into Postgres
-	cd services/simulator && go run ./cmd/simulator seed --seed $(SEED) --vehicles $(VEHICLES) --tenants $(TENANTS) --ref ../../data/reference --out ../../data/seed
+	cd services/simulator && go run ./cmd/simulator seed --seed $(SEED) --vehicles $(VEHICLES) --tenants $(TENANTS) --ref ../../data/reference --out ../../data/seed --publish-registry localhost:9092
 	$(PSQL) -f - < services/fleet-api/migrations/0001_fleet_core.sql
 	$(PSQL) -1 -f - < infra/compose/seed-load.sql
 	$(PSQL) -c "SELECT (SELECT count(*) FROM fleet.vehicle) AS vehicles, (SELECT count(*) FROM fleet.depot) AS depots, (SELECT count(*) FROM fleet.charger) AS chargers"
 
-sim: ## stream telemetry (MODE=mqtt|https|kafka-direct RATE_HZ SPEEDUP NOISE DURATION INJECT=<vin>:<fault>)
+sim: ## stream telemetry (MODE=mqtt|https|kafka-direct RATE_HZ SPEEDUP NOISE DURATION INJECT=<vin>:<fault> PRECURSOR=12h)
 	$(SIM) run --seed $(SEED) --vehicles $(VEHICLES) --tenants $(TENANTS) --ref ../../data/reference \
 		--mode $(MODE) --rate-hz $(RATE_HZ) --speedup $(SPEEDUP) --noise $(NOISE) \
-		--ground-truth-out ../../data/ground_truth $(if $(DURATION),--duration $(DURATION)) $(if $(INJECT),--demo-inject $(INJECT))
+		--ground-truth-out ../../data/ground_truth $(if $(DURATION),--duration $(DURATION)) $(if $(INJECT),--demo-inject $(INJECT)) $(if $(PRECURSOR),--demo-precursor $(PRECURSOR))
+
+e2e: ## end-to-end run with demo fault, alert latency and lag capture (OUT=<local dir> DURATION VIN)
+	bash tests/load/e2e-local.sh
 
 test: ## unit tests with coverage (all Go modules)
-	cd libs/go-common && go test -cover ./...
-	cd services/simulator && go test -cover ./...
-	cd services/ingest-gateway && go test -cover ./...
-	cd services/stream-processor && go test -cover ./...
+	cd libs/go-common && go test -timeout 5m -cover ./...
+	cd services/simulator && go test -timeout 5m -cover ./...
+	cd services/ingest-gateway && go test -timeout 5m -cover ./...
+	cd services/stream-processor && go test -timeout 5m -cover ./...
 
 test-int: ## integration tests against the local stack (make up first)
 	cd services/simulator && go test -tags integration -count=1 ./...

@@ -17,7 +17,7 @@ func url() string {
 	return "redis://localhost:6379/0"
 }
 
-func TestConfirmAndRemember(t *testing.T) {
+func TestSeenIsReadOnlyAndRememberRecords(t *testing.T) {
 	c, err := New(url(), 20*time.Millisecond)
 	if err != nil {
 		t.Fatal(err)
@@ -28,29 +28,27 @@ func TestConfirmAndRemember(t *testing.T) {
 		t.Skipf("no Redis: %v", err)
 	}
 	k := fmt.Sprintf("dedup:IT:%d", time.Now().UnixNano())
-	got, err := c.ConfirmNew(ctx, []string{k, k + ":b"})
-	if err != nil || !got[0] || !got[1] {
-		t.Fatalf("first sighting must be new: %v %v", got, err)
+	for i := 0; i < 2; i++ { // asking twice must not record anything
+		got, err := c.Seen(ctx, []string{k})
+		if err != nil || got[0] {
+			t.Fatalf("Seen must be read-only: %v %v", got, err)
+		}
 	}
-	if got, _ = c.ConfirmNew(ctx, []string{k}); got[0] {
-		t.Fatal("second sighting must be a duplicate")
+	c.Remember([]string{k})
+	if got, _ := c.Seen(ctx, []string{k}); !got[0] {
+		t.Fatal("a remembered key is seen immediately (pending set)")
 	}
-	r := k + ":remembered"
-	c.Remember([]string{r})
 	deadline := time.Now().Add(2 * time.Second)
 	for time.Now().Before(deadline) {
-		if got, _ := c.ConfirmNew(ctx, []string{r}); !got[0] {
-			return // the async batch landed
+		if n, _ := c.rdb.Exists(ctx, k).Result(); n == 1 {
+			return // the async batch reached Redis
 		}
-		// ConfirmNew itself set it if the batch had not landed yet; use a fresh key and retry.
-		r = fmt.Sprintf("%s:%d", r, time.Now().UnixNano())
-		c.Remember([]string{r})
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatal("Remember never reached Redis")
 }
 
-// The race the pending set exists for: a duplicate confirmed before the async batch has flushed.
+// The race the pending set exists for: a duplicate checked before the async batch has flushed.
 func TestDuplicateBeforeFlushIsCaught(t *testing.T) {
 	c, err := New(url(), time.Hour) // never flushes during the test
 	if err != nil {
@@ -62,9 +60,9 @@ func TestDuplicateBeforeFlushIsCaught(t *testing.T) {
 	}
 	k := fmt.Sprintf("dedup:IT:race:%d", time.Now().UnixNano())
 	c.Remember([]string{k})
-	got, err := c.ConfirmNew(context.Background(), []string{k, k + ":other"})
-	if err != nil || got[0] || !got[1] {
-		t.Fatalf("pending key must be a duplicate and an unseen key new: %v %v", got, err)
+	got, err := c.Seen(context.Background(), []string{k, k + ":other"})
+	if err != nil || !got[0] || got[1] {
+		t.Fatalf("pending key must be seen and an unseen key not: %v %v", got, err)
 	}
 }
 
@@ -75,7 +73,7 @@ func TestRedisDownFailsFast(t *testing.T) {
 	}
 	defer c.Close()
 	start := time.Now()
-	if _, err := c.ConfirmNew(context.Background(), []string{"k"}); err == nil {
+	if _, err := c.Seen(context.Background(), []string{"k"}); err == nil {
 		t.Fatal("want error")
 	}
 	if d := time.Since(start); d > 3*time.Second {

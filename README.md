@@ -3,7 +3,7 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: simulator (F-01) and ingest-gateway (F-02/F-03) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> Status: simulator (F-01), ingest-gateway (F-02/F-03) and stream-processor (F-05, F-04 data side) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
 
 ## Quick start
 
@@ -11,11 +11,12 @@ Requires Docker, GNU Make, Go 1.24+.
 
 ```bash
 cp .env.example .env   # dev-only values
-make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ingest-gateway
-make seed              # 100K vehicles of synthetic master data → Postgres (SEED=42 VEHICLES=100000 TENANTS=3)
+make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ScyllaDB, ingest-gateway, stream-processor
+make seed              # 100K vehicles of synthetic master data → Postgres + vehicle registry topic (SEED=42 VEHICLES=100000 TENANTS=3)
 make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in real time; Ctrl-C to stop
 make test              # unit tests
 make test-int          # integration tests against the running stack
+make e2e OUT=<dir>     # full pipeline run with a demo fault: alert latency, lag, sink timings (write OUT outside OneDrive)
 make down              # stop + wipe volumes
 ```
 
@@ -44,6 +45,11 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | Redis | `localhost:6379` |
 | MQTT (Mosquitto, dev: anonymous, no TLS) | `localhost:1883` |
 | ingest-gateway: `POST /ingest/v1/{oem}/batch`, `/healthz`, `/readyz`, `/metrics` | `localhost:8081` |
+| stream-processor (processor role) `/metrics` `/readyz` | `localhost:9102` |
+| stream-processor (raw-sink role) `/metrics` `/readyz` | `localhost:9103` |
+| ScyllaDB (CQL) | `localhost:9042` |
+
+Watch alerts live: `cd services/stream-processor && go run ./cmd/alerts-tail --vin <VIN>`.
 
 ## Layout
 
