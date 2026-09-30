@@ -40,6 +40,22 @@ config/rules.yaml
   - **Beyond** lateness they are still written to Scylla (idempotent) but don't reopen closed windows or re-fire alerts. Count them in `late_events_total`.
 - Use **event time** for all rules and windows. Use processing time only for timeouts (e.g. "no data for 10 min" → `TELEMETRY_STALE`).
 
+### Decisions (2026-09-30, supersede the two bullets above where they differ)
+
+- **Watermark per VIN, not per partition** (`internal/domain/window`). The simulated fleet has vehicles whose clocks run
+  minutes fast and vehicles replaying buffered data after outages (minutes behind, but in order). A partition-wide
+  watermark would let one fast clock mark every other vehicle's events late and would drop whole outage replays;
+  per-VIN watermarks handle both. Rollup aggregates are order-independent, so within-lateness reordering is harmless.
+- **Rules run on per-VIN monotonic event time with no reorder buffer** (`internal/domain/rules`). A 30 s reorder buffer
+  would add 30 s to every alert (NFR: critical < 5 s). An event older than the vehicle's newest processed event is
+  stored and counted in rollups but not evaluated by rules (`LateForRules`).
+- **One alert machine per (rule, severity level[, DTC code])**; the id hashes `vin|rule:severity[:code]|episode_start`,
+  so a warning→critical escalation is a new alert with its own id rather than a mutation.
+- **Sessions:** `v_rest_before` only for now; `v_rest_after` (needs 30 min of rest after the session) is a follow-up
+  record for battery-intel when it needs it. Rollup energy = mean V·I × 1 min (order-independent approximation).
+- **Vehicle registry** (tenant, fleet, depot, duty, capacity): consumed from the compacted `fleet.vehicle.v1` topic
+  (ADR-0006), never from fleet-api's schema.
+
 ## Rules (thresholds in `config/rules.yaml`, never hard-coded)
 
 | Rule ID | Signal | Default shape | Severity |

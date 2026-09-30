@@ -1,0 +1,78 @@
+# Real-time battery safety rules (services/stream-processor/CLAUDE.md). Thresholds live here, never in code.
+# Values are engineering defaults for the SYNTHETIC fleet; each has its rationale. Anything cited in the
+# Solution Document must be checked against the named source first.
+rules:
+  THERMAL_OVERTEMP:            # pack_temp_max_c ≥ threshold, held for_s
+    enabled: true
+    levels:
+      - { severity: warning,  threshold: 48 }   # upper band of typical Li-ion operating range (~45–55 °C); verify per cell datasheet
+      - { severity: critical, threshold: 55 }
+    for_s: 30
+    clear_for_s: 300
+
+  THERMAL_RISE_RATE:           # slope of pack_temp_max_c over window_s, °C/min
+    enabled: true
+    levels:
+      - { severity: critical, threshold: 2.0 }  # normal packs change far slower; fast rise is a runaway precursor
+    window_s: 60
+    min_span_s: 30
+    for_s: 0
+    clear_for_s: 300
+
+  THERMAL_DELTA_ANOMALY:       # (pack_temp_max_c − ambient_c) vs the vehicle's own EWMA baseline
+    enabled: true
+    levels: [ { severity: warning } ]
+    z: 4
+    alpha: 0.002                # ~500-sample memory (≈ 1.4 h at 0.1 Hz); baseline frozen while breaching
+    min_n: 360
+    for_s: 600
+    clear_for_s: 1800
+
+  CELL_IMBALANCE:              # cell_v_max_mv − cell_v_min_mv
+    enabled: true
+    levels:
+      - { severity: warning,  threshold: 50 }
+      - { severity: critical, threshold: 100 }
+    for_s: 300
+    clear_for_s: 600
+
+  ISOLATION_LOW:               # isolation resistance per volt of pack voltage (Ω/V), alert when BELOW
+    enabled: true
+    levels:
+      - { severity: warning,  threshold: 500 }  # UN ECE R100 minimum for AC circuits (unverified here: check R100 §5.1.3 before citing)
+      - { severity: critical, threshold: 100 }  # UN ECE R100 minimum for DC circuits (same caveat)
+    for_s: 10
+    clear_for_s: 300
+
+  HV_INTERLOCK_OPEN:           # samples with hv_interlock_ok=false while HV is active, within window_s
+    enabled: true
+    levels: [ { severity: critical } ]
+    count: 2
+    window_s: 300
+    for_s: 0
+    clear_for_s: 600
+
+  AUX_12V_LOW:                 # aux_12v_v while parked, alert when BELOW
+    enabled: true
+    levels:
+      - { severity: warning, threshold: 11.8 }  # a resting lead-acid 12 V battery below ~11.8 V is deeply discharged
+    for_s: 600
+    clear_for_s: 600
+
+  CHARGE_NEEDED:               # SoC < reserve + energy to reach the depot (1.3 × straight-line km)
+    enabled: true
+    levels: [ { severity: info } ]
+    reserve_pct: 15
+    for_s: 60
+    clear_for_s: 600
+
+  DTC_RAISED:                  # a code appears in dtc[]; severity from data/reference/dtc_catalogue.csv
+    enabled: true
+    for_s: 0
+    clear_for_s: 60
+
+  TELEMETRY_STALE:             # processing time: no event for stale_s while in the duty window
+    enabled: true
+    stale_s: 600
+    for_s: 0
+    clear_for_s: 0
