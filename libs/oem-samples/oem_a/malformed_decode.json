@@ -1,0 +1,1 @@
+{"vin":"0KCDV45N9RC000001","schema":1,"ts":"2026-09-01T05:00:00.123Z","seq":4242,"evt":"DTC_RAISED","pos":{"lat":13.0827,"lon":80.2707,"speed_kmh":42.5},"odo_km":18234.125,"soc_pct":63.25,"pack":{"voltage_v":362.4,"current_a

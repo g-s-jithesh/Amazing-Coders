@@ -11,11 +11,22 @@ Requires Docker, GNU Make, Go 1.24+.
 
 ```bash
 cp .env.example .env   # dev-only values
-make up                # Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8
+make up                # Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto
 make seed              # 100K vehicles of synthetic master data → Postgres (SEED=42 VEHICLES=100000 TENANTS=3)
+make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in real time; Ctrl-C to stop
 make test              # unit tests
+make test-int          # integration tests against the running stack
 make down              # stop + wipe volumes
 ```
+
+### Simulator
+
+`make sim` options: `MODE=mqtt` (native transports: oem_a/oem_c over MQTT, oem_b over HTTPS to the gateway) · `https` (all as
+signed batches) · `kafka-direct` (raw payloads straight to `oem.raw.*`, broker load tests only) · `RATE_HZ` · `SPEEDUP`
+(sim s per wall s; `0` = as fast as possible) · `NOISE=clean|realistic|hostile` · `DURATION=60s` ·
+`INJECT=<VIN>:<fault>` (demo fault, 12 h precursor by default: use `SPEEDUP` to compress it).
+Until the ingest-gateway exists, oem_b batches are counted as `dropped_records` (expected).
+Golden OEM payloads live in `libs/oem-samples/` (`make samples` regenerates them).
 
 Trace one simulated vehicle (CSV, includes the simulator-only `soh_true` column):
 
@@ -31,6 +42,7 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | Kafka | `localhost:9092` |
 | Postgres | `localhost:5432` (db/user `kilowatt`) |
 | Redis | `localhost:6379` |
+| MQTT (Mosquitto, dev: anonymous, no TLS) | `localhost:1883` |
 
 ## Layout
 

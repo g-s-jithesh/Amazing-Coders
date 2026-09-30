@@ -71,3 +71,22 @@ type Sample struct {
 	Dropout                    uint8     // DropGPS | DropTemp | DropCells
 	Malformed                  Malformed // set only by the noise layer
 }
+
+var evtNames = [...]string{"UNSPECIFIED", "PERIODIC", "IGN_ON", "IGN_OFF", "PLUG_IN", "PLUG_OUT", "HARSH_BRAKE", "HARSH_ACCEL", "DTC_RAISED"}
+
+// String is the proto enum name without its prefix (e.g. "IGN_ON").
+func (e EventType) String() string {
+	if e < 0 || int(e) >= len(evtNames) {
+		return "UNSPECIFIED"
+	}
+	return evtNames[e]
+}
+
+var chargeNames = [...]string{"UNSPECIFIED", "IDLE", "AC", "DC_FAST", "FAULT"}
+
+func (c ChargeState) String() string {
+	if c < 0 || int(c) >= len(chargeNames) {
+		return "UNSPECIFIED"
+	}
+	return chargeNames[c]
+}

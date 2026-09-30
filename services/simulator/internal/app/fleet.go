@@ -85,6 +85,7 @@ func BuildFleet(ds *masterdata.Dataset, models []masterdata.Model, seed uint64, 
 			FaultRatePerYear:  opts.FaultRatePerYear,
 		}, pack, batt, rng)
 		v.ScheduleNextFault(start.UnixMilli())
+		v.StartMidShift(TickAt(start, 1))
 		out[i] = v
 	}
 	return out, nil

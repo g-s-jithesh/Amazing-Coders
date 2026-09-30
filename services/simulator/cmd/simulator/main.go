@@ -1,6 +1,7 @@
 // Command simulator generates the synthetic Kilowatt EV fleet.
 //
 //	simulator seed  --seed 42 --vehicles 100000 --tenants 3 --ref data/reference --out data/seed
+//	simulator run   --mode mqtt --rate-hz 0.1 --noise realistic --demo-inject <VIN>:cooling_degradation
 //	simulator trace --seed 42 --vin <VIN> --start 2026-09-01T00:00:00+05:30 --hours 48 --every 60 > trace.csv
 package main
 
@@ -23,7 +24,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: simulator seed|trace [flags]")
+		fmt.Fprintln(os.Stderr, "usage: simulator seed|trace|run|[flags]")
 		os.Exit(2)
 	}
 	var err error
@@ -32,6 +33,8 @@ func main() {
 		err = runSeed(os.Args[2:])
 	case "trace":
 		err = runTrace(os.Args[2:])
+	case "run":
+		err = runRun(os.Args[2:])
 	default:
 		err = fmt.Errorf("unknown command %q", os.Args[1])
 	}

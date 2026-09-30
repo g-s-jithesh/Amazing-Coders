@@ -227,3 +227,34 @@ func BenchmarkStepAndSample(b *testing.B) {
 		}
 	}
 }
+
+func TestStartMidShiftIsSilentAndOnTheRoad(t *testing.T) {
+	v := newVehicle(6*60, 14*60, 0.9, 21)
+	at10 := t0.Add(10 * time.Hour) // 10:00 IST, half-way through a 06:00–14:00 shift
+	v.StartMidShift(tickAt(at10, 1))
+	if v.Mode != Driving || v.PendingEvents() != 0 || v.SpeedKmh <= 0 {
+		t.Fatalf("mode=%v pending=%d speed=%.1f", v.Mode, v.PendingEvents(), v.SpeedKmh)
+	}
+	if math.Abs(v.tripKm-v.PlannedKm/2) > 1e-9 {
+		t.Fatalf("tripKm %.1f, want half of %.0f", v.tripKm, v.PlannedKm)
+	}
+	// Does not depart again in the same shift, and the next day's departure is normal.
+	r := simulate(v, at10, 24, 5)
+	ign := 0
+	for _, s := range r.samples {
+		if s.Evt == telemetry.EvtIgnOn {
+			ign++
+			if m := minuteOf(s); m != 6*60 {
+				t.Fatalf("IGN_ON at minute %d", m)
+			}
+		}
+	}
+	if ign != 1 {
+		t.Fatalf("IGN_ON count %d in next 24 h, want 1 (next morning)", ign)
+	}
+	off := newVehicle(6*60, 14*60, 0.9, 22)
+	off.StartMidShift(tickAt(t0.Add(20*time.Hour), 1)) // 20:00: off shift → no-op
+	if off.Mode != Parked {
+		t.Fatal("off-shift vehicle must stay parked")
+	}
+}

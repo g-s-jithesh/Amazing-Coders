@@ -9,6 +9,7 @@ infra/pki/out/
 
 # Simulator ground truth (evaluation only; never committed or read by the pipeline)
 data/ground_truth/
+**/data/ground_truth/
 
 # Generated master data (deterministic; regenerate with `make seed`)
 data/seed/

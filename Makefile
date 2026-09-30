@@ -8,9 +8,14 @@ PSQL := $(COMPOSE) exec -T postgres psql -U kilowatt -d kilowatt -v ON_ERROR_STO
 SEED ?= 42
 VEHICLES ?= 100000
 TENANTS ?= 3
-BUF := docker run --rm -v "$(CURDIR)/libs/proto:/workspace" -w /workspace bufbuild/buf:1.47.2
+MODE ?= mqtt
+RATE_HZ ?= 0.1
+SPEEDUP ?= 1
+NOISE ?= realistic
+SIM := cd services/simulator && go run ./cmd/simulator
+BUF :=docker run --rm -v "$(CURDIR)/libs/proto:/workspace" -w /workspace bufbuild/buf:1.47.2
 
-.PHONY: help up down ps logs seed test proto-lint proto-breaking
+.PHONY: help up down ps logs seed sim test test-int samples proto-lint proto-breaking
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -34,8 +39,19 @@ seed: ## generate master data (SEED, VEHICLES, TENANTS) and load it into Postgre
 	$(PSQL) -1 -f - < infra/compose/seed-load.sql
 	$(PSQL) -c "SELECT (SELECT count(*) FROM fleet.vehicle) AS vehicles, (SELECT count(*) FROM fleet.depot) AS depots, (SELECT count(*) FROM fleet.charger) AS chargers"
 
+sim: ## stream telemetry (MODE=mqtt|https|kafka-direct RATE_HZ SPEEDUP NOISE DURATION INJECT=<vin>:<fault>)
+	$(SIM) run --seed $(SEED) --vehicles $(VEHICLES) --tenants $(TENANTS) --ref ../../data/reference \
+		--mode $(MODE) --rate-hz $(RATE_HZ) --speedup $(SPEEDUP) --noise $(NOISE) \
+		--ground-truth-out ../../data/ground_truth $(if $(DURATION),--duration $(DURATION)) $(if $(INJECT),--demo-inject $(INJECT))
+
 test: ## unit tests with coverage
 	cd services/simulator && go test -cover ./...
+
+test-int: ## integration tests against the local stack (make up first)
+	cd services/simulator && go test -tags integration -count=1 ./...
+
+samples: ## regenerate libs/oem-samples golden files from the encoders
+	cd services/simulator && go test ./internal/adapters/encoders -run TestGoldenFiles -update
 
 proto-lint: ## lint canonical schemas
 	$(BUF) lint

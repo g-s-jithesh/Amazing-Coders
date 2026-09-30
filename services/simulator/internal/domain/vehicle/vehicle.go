@@ -172,6 +172,24 @@ func (v *Vehicle) depart(tk Tick) {
 	v.stopUntilMs = 0
 }
 
+// StartMidShift is for vehicles whose shift is already under way at sim start: they begin on the
+// road (random point in the city, trip distance pro-rated to elapsed shift time) without emitting
+// IGN_ON, so a sim that starts mid-morning does not fake a fleet-wide ignition storm. No-op outside
+// the shift.
+func (v *Vehicle) StartMidShift(tk Tick) {
+	if !env.InShift(tk.MinIST, v.DepartMin, v.ReturnMin) {
+		return
+	}
+	shiftLen := (v.ReturnMin - v.DepartMin + 1440) % 1440
+	elapsed := (tk.MinIST - v.DepartMin + 1440) % 1440
+	v.depart(tk)
+	v.nEvt = 0 // already driving: no PLUG_OUT / IGN_ON at sim start
+	v.Lat = v.CityLat + (v.rng.Float64()*2-1)*v.CitySpanDeg
+	v.Lon = v.CityLon + (v.rng.Float64()*2-1)*v.CitySpanDeg
+	v.tripKm = v.PlannedKm * float64(elapsed) / float64(shiftLen)
+	v.SpeedKmh = v.targetKmh
+}
+
 func (v *Vehicle) pickWaypoint() {
 	v.wpLat = v.CityLat + (v.rng.Float64()*2-1)*v.CitySpanDeg
 	v.wpLon = v.CityLon + (v.rng.Float64()*2-1)*v.CitySpanDeg
