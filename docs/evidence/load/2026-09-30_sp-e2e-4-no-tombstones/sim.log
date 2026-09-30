@@ -1,0 +1,25 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.1 --speedup 1 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 180s --demo-inject 0KCDV45N0MB000094:cooling_degradation --demo-precursor 2m
+2026/09/30 22:03:41 INFO demo fault injected vin=0KCDV45N0MB000094 fault=cooling_degradation dtc_at=2026-09-30T16:35:40.000Z
+2026/09/30 22:03:43 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.1 speedup=1 noise=realistic start=2026-09-30T16:33:40.000Z target_eps=10000
+2026/09/30 22:03:53 INFO stats sim_now=2026-09-30T16:33:47Z samples=167704 published=166638 publish_errors=0 encode_errors=0 avg_eps=13097
+2026/09/30 22:04:03 INFO stats sim_now=2026-09-30T16:33:59Z samples=280999 published=280558 publish_errors=0 encode_errors=0 avg_eps=12346
+2026/09/30 22:04:13 INFO stats sim_now=2026-09-30T16:34:09Z samples=380999 published=381722 publish_errors=0 encode_errors=0 avg_eps=11665
+2026/09/30 22:04:23 INFO stats sim_now=2026-09-30T16:34:19Z samples=480999 published=482747 publish_errors=0 encode_errors=0 avg_eps=11299
+2026/09/30 22:04:33 INFO stats sim_now=2026-09-30T16:34:29Z samples=580999 published=583686 publish_errors=0 encode_errors=0 avg_eps=11070
+2026/09/30 22:04:43 INFO stats sim_now=2026-09-30T16:34:39Z samples=680999 published=684696 publish_errors=0 encode_errors=0 avg_eps=10916
+2026/09/30 22:04:53 INFO stats sim_now=2026-09-30T16:34:49Z samples=780999 published=785659 publish_errors=0 encode_errors=0 avg_eps=10803
+2026/09/30 22:05:03 INFO stats sim_now=2026-09-30T16:34:59Z samples=880999 published=886585 publish_errors=0 encode_errors=0 avg_eps=10717
+2026/09/30 22:05:13 INFO stats sim_now=2026-09-30T16:35:09Z samples=980999 published=987412 publish_errors=0 encode_errors=0 avg_eps=10649
+2026/09/30 22:05:23 INFO stats sim_now=2026-09-30T16:35:19Z samples=1080999 published=1088411 publish_errors=0 encode_errors=0 avg_eps=10595
+2026/09/30 22:05:33 INFO stats sim_now=2026-09-30T16:35:29Z samples=1180999 published=1189428 publish_errors=0 encode_errors=0 avg_eps=10551
+2026/09/30 22:05:43 INFO stats sim_now=2026-09-30T16:35:39Z samples=1280999 published=1290424 publish_errors=0 encode_errors=0 avg_eps=10514
+2026/09/30 22:05:53 INFO stats sim_now=2026-09-30T16:35:49Z samples=1381000 published=1391357 publish_errors=0 encode_errors=0 avg_eps=10483
+2026/09/30 22:06:03 INFO stats sim_now=2026-09-30T16:35:59Z samples=1481000 published=1492296 publish_errors=0 encode_errors=0 avg_eps=10455
+2026/09/30 22:06:13 INFO stats sim_now=2026-09-30T16:36:09Z samples=1581000 published=1593252 publish_errors=0 encode_errors=0 avg_eps=10432
+2026/09/30 22:06:23 INFO stats sim_now=2026-09-30T16:36:19Z samples=1681000 published=1694253 publish_errors=0 encode_errors=0 avg_eps=10411
+2026/09/30 22:06:33 INFO stats sim_now=2026-09-30T16:36:29Z samples=1781000 published=1795236 publish_errors=0 encode_errors=0 avg_eps=10393
+2026/09/30 22:06:43 INFO stats sim_now=2026-09-30T16:36:39Z samples=1881000 published=1896122 publish_errors=0 encode_errors=0 avg_eps=10377
+2026/09/30 22:06:43 INFO stats sim_now=2026-09-30T16:36:39Z samples=1881000 published=1896122 publish_errors=0 encode_errors=0 avg_eps=10374
+2026/09/30 22:06:44 INFO https dropped_records=0

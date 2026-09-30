@@ -1,0 +1,27 @@
+make[1]: Entering directory 'C:/Users/gsjit/OneDrive/Documents/motorq'
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.1 --speedup 1 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 180s --demo-inject 0KCDV45N0MB000094:cooling_degradation --demo-precursor 2m
+2026/10/01 02:16:37 INFO demo fault injected vin=0KCDV45N0MB000094 fault=cooling_degradation dtc_at=2026-09-30T20:48:36.000Z
+2026/10/01 02:16:37 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.1 speedup=1 noise=realistic start=2026-09-30T20:46:36.000Z target_eps=10000
+2026/10/01 02:16:47 INFO stats sim_now=2026-09-30T20:46:45Z samples=180999 published=179954 publish_errors=0 encode_errors=0 avg_eps=17319
+2026/10/01 02:16:57 INFO stats sim_now=2026-09-30T20:46:55Z samples=280999 published=280558 publish_errors=0 encode_errors=0 avg_eps=13759
+2026/10/01 02:17:07 INFO stats sim_now=2026-09-30T20:47:05Z samples=380999 published=381722 publish_errors=0 encode_errors=0 avg_eps=12560
+2026/10/01 02:17:17 INFO stats sim_now=2026-09-30T20:47:15Z samples=480999 published=482747 publish_errors=0 encode_errors=0 avg_eps=11951
+2026/10/01 02:17:27 INFO stats sim_now=2026-09-30T20:47:25Z samples=580999 published=583686 publish_errors=0 encode_errors=0 avg_eps=11583
+2026/10/01 02:17:37 INFO stats sim_now=2026-09-30T20:47:35Z samples=680999 published=684696 publish_errors=0 encode_errors=0 avg_eps=11337
+2026/10/01 02:17:47 INFO stats sim_now=2026-09-30T20:47:45Z samples=780999 published=785659 publish_errors=0 encode_errors=0 avg_eps=11161
+2026/10/01 02:17:57 INFO stats sim_now=2026-09-30T20:47:55Z samples=880999 published=886585 publish_errors=0 encode_errors=0 avg_eps=11028
+2026/10/01 02:18:07 INFO stats sim_now=2026-09-30T20:48:05Z samples=980999 published=987412 publish_errors=0 encode_errors=0 avg_eps=10923
+2026/10/01 02:18:17 INFO stats sim_now=2026-09-30T20:48:15Z samples=1080999 published=1088411 publish_errors=0 encode_errors=0 avg_eps=10841
+2026/10/01 02:18:27 INFO stats sim_now=2026-09-30T20:48:25Z samples=1180999 published=1189428 publish_errors=0 encode_errors=0 avg_eps=10774
+2026/10/01 02:18:37 INFO stats sim_now=2026-09-30T20:48:35Z samples=1280999 published=1290424 publish_errors=0 encode_errors=0 avg_eps=10718
+2026/10/01 02:18:47 INFO stats sim_now=2026-09-30T20:48:45Z samples=1381000 published=1391357 publish_errors=0 encode_errors=0 avg_eps=10670
+2026/10/01 02:18:57 INFO stats sim_now=2026-09-30T20:48:55Z samples=1481000 published=1492296 publish_errors=0 encode_errors=0 avg_eps=10629
+2026/10/01 02:19:07 INFO stats sim_now=2026-09-30T20:49:05Z samples=1581000 published=1593252 publish_errors=0 encode_errors=0 avg_eps=10594
+2026/10/01 02:19:17 INFO stats sim_now=2026-09-30T20:49:15Z samples=1681000 published=1694253 publish_errors=0 encode_errors=0 avg_eps=10563
+2026/10/01 02:19:27 INFO stats sim_now=2026-09-30T20:49:25Z samples=1781000 published=1795236 publish_errors=0 encode_errors=0 avg_eps=10536
+2026/10/01 02:19:37 INFO stats sim_now=2026-09-30T20:49:35Z samples=1881000 published=1896122 publish_errors=0 encode_errors=0 avg_eps=10511
+2026/10/01 02:19:37 INFO stats sim_now=2026-09-30T20:49:35Z samples=1881000 published=1896122 publish_errors=0 encode_errors=0 avg_eps=10509
+2026/10/01 02:19:37 INFO https dropped_records=0
+make[1]: Leaving directory 'C:/Users/gsjit/OneDrive/Documents/motorq'

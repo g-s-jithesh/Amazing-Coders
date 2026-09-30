@@ -1,0 +1,8 @@
+published 2487936  https_dropped 0
+gateway accepted 2460736 rejected 2567 duplicates 24633  unaccounted 0
+processor events 2460736
+demo alert DTC_RAISED P0A7E SEVERITY_CRITICAL: gateway-ingest -> processed 21008 ms, -> Kafka append 23270 ms
+all alerts with a trigger (n=1): latency <= p50 30.0 s, p95 30.0 s, p99 30.0 s (bucket upper bounds)
+sink kafka: 0 batch writes, mean 0 ms
+sink redis: 0 batch writes, mean 0 ms
+sink scylla: 0 batch writes, mean 0 ms

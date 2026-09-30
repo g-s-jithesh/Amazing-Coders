@@ -1,0 +1,32 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.1 --speedup 1 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 240s --demo-inject 0KCDV45N0MB000175:cooling_degradation --demo-precursor 2m
+2026/09/30 21:43:35 INFO demo fault injected vin=0KCDV45N0MB000175 fault=cooling_degradation dtc_at=2026-09-30T16:15:35.000Z
+2026/09/30 21:43:35 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.1 speedup=1 noise=realistic start=2026-09-30T16:13:35.000Z target_eps=10000
+2026/09/30 21:43:45 INFO stats sim_now=2026-09-30T16:13:44Z samples=167607 published=166603 publish_errors=0 encode_errors=0 avg_eps=15998
+2026/09/30 21:43:55 INFO stats sim_now=2026-09-30T16:13:54Z samples=267607 published=267079 publish_errors=0 encode_errors=0 avg_eps=13083
+2026/09/30 21:44:05 INFO stats sim_now=2026-09-30T16:14:04Z samples=367607 published=368221 publish_errors=0 encode_errors=0 avg_eps=12107
+2026/09/30 21:44:15 INFO stats sim_now=2026-09-30T16:14:14Z samples=467607 published=469243 publish_errors=0 encode_errors=0 avg_eps=11611
+2026/09/30 21:44:25 INFO stats sim_now=2026-09-30T16:14:23Z samples=558896 published=561392 publish_errors=0 encode_errors=0 avg_eps=11135
+2026/09/30 21:44:35 INFO stats sim_now=2026-09-30T16:14:34Z samples=667607 published=671133 publish_errors=0 encode_errors=0 avg_eps=11108
+2026/09/30 21:44:45 INFO stats sim_now=2026-09-30T16:14:44Z samples=767607 published=772131 publish_errors=0 encode_errors=0 avg_eps=10965
+2026/09/30 21:44:55 INFO stats sim_now=2026-09-30T16:14:54Z samples=867607 published=873063 publish_errors=0 encode_errors=0 avg_eps=10857
+2026/09/30 21:45:05 INFO stats sim_now=2026-09-30T16:15:04Z samples=967607 published=973910 publish_errors=0 encode_errors=0 avg_eps=10771
+2026/09/30 21:45:15 INFO stats sim_now=2026-09-30T16:15:14Z samples=1067607 published=1074900 publish_errors=0 encode_errors=0 avg_eps=10704
+2026/09/30 21:45:25 INFO stats sim_now=2026-09-30T16:15:23Z samples=1164062 published=1172316 publish_errors=0 encode_errors=0 avg_eps=10617
+2026/09/30 21:45:35 INFO stats sim_now=2026-09-30T16:15:34Z samples=1267607 published=1276919 publish_errors=0 encode_errors=0 avg_eps=10604
+2026/09/30 21:45:45 INFO stats sim_now=2026-09-30T16:15:44Z samples=1367608 published=1377832 publish_errors=0 encode_errors=0 avg_eps=10565
+2026/09/30 21:45:55 INFO stats sim_now=2026-09-30T16:15:53Z samples=1461663 published=1472732 publish_errors=0 encode_errors=0 avg_eps=10488
+2026/09/30 21:46:05 INFO stats sim_now=2026-09-30T16:16:04Z samples=1567608 published=1579695 publish_errors=0 encode_errors=0 avg_eps=10502
+2026/09/30 21:46:15 INFO stats sim_now=2026-09-30T16:16:14Z samples=1667608 published=1680715 publish_errors=0 encode_errors=0 avg_eps=10477
+2026/09/30 21:46:25 INFO stats sim_now=2026-09-30T16:16:24Z samples=1767608 published=1781747 publish_errors=0 encode_errors=0 avg_eps=10455
+2026/09/30 21:46:35 INFO stats sim_now=2026-09-30T16:16:34Z samples=1867608 published=1882613 publish_errors=0 encode_errors=0 avg_eps=10435
+2026/09/30 21:46:45 INFO stats sim_now=2026-09-30T16:16:44Z samples=1967608 published=1983453 publish_errors=0 encode_errors=0 avg_eps=10416
+2026/09/30 21:46:55 INFO stats sim_now=2026-09-30T16:16:54Z samples=2067608 published=2084279 publish_errors=0 encode_errors=0 avg_eps=10399
+2026/09/30 21:47:05 INFO stats sim_now=2026-09-30T16:17:04Z samples=2167608 published=2185218 publish_errors=0 encode_errors=0 avg_eps=10385
+2026/09/30 21:47:15 INFO stats sim_now=2026-09-30T16:17:13Z samples=2263468 published=2281912 publish_errors=0 encode_errors=0 avg_eps=10352
+2026/09/30 21:47:25 INFO stats sim_now=2026-09-30T16:17:24Z samples=2367608 published=2387027 publish_errors=0 encode_errors=0 avg_eps=10359
+2026/09/30 21:47:35 INFO stats sim_now=2026-09-30T16:17:34Z samples=2467608 published=2487936 publish_errors=0 encode_errors=0 avg_eps=10348
+2026/09/30 21:47:35 WARN publisher closed with undelivered records err="https: 1500 records dropped; last error: https: giving up after 4 attempts (500 records): https: http://localhost:8081/ingest/v1/oem_b/batch → 503"
+2026/09/30 21:47:35 INFO stats sim_now=2026-09-30T16:17:34Z samples=2467608 published=2487936 publish_errors=0 encode_errors=0 avg_eps=10339
+2026/09/30 21:47:35 INFO https dropped_records=1500

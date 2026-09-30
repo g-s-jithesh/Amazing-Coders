@@ -1,0 +1,31 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.1 --speedup 1 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 240s --demo-inject 0KCDV45N0MB000094:cooling_degradation --demo-precursor 2m
+2026/09/30 21:25:34 INFO demo fault injected vin=0KCDV45N0MB000094 fault=cooling_degradation dtc_at=2026-09-30T15:57:34.000Z
+2026/09/30 21:25:34 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.1 speedup=1 noise=realistic start=2026-09-30T15:55:34.000Z target_eps=10000
+2026/09/30 21:25:44 INFO stats sim_now=2026-09-30T15:55:43Z samples=167607 published=166603 publish_errors=0 encode_errors=0 avg_eps=16005
+2026/09/30 21:25:54 INFO stats sim_now=2026-09-30T15:55:53Z samples=267607 published=267079 publish_errors=0 encode_errors=0 avg_eps=13086
+2026/09/30 21:26:04 INFO stats sim_now=2026-09-30T15:56:03Z samples=367607 published=368221 publish_errors=0 encode_errors=0 avg_eps=12108
+2026/09/30 21:26:14 INFO stats sim_now=2026-09-30T15:56:13Z samples=467607 published=469243 publish_errors=0 encode_errors=0 avg_eps=11612
+2026/09/30 21:26:24 INFO stats sim_now=2026-09-30T15:56:23Z samples=567607 published=570202 publish_errors=0 encode_errors=0 avg_eps=11311
+2026/09/30 21:26:34 INFO stats sim_now=2026-09-30T15:56:33Z samples=667607 published=671133 publish_errors=0 encode_errors=0 avg_eps=11109
+2026/09/30 21:26:44 INFO stats sim_now=2026-09-30T15:56:43Z samples=767607 published=772131 publish_errors=0 encode_errors=0 avg_eps=10966
+2026/09/30 21:26:54 INFO stats sim_now=2026-09-30T15:56:53Z samples=867607 published=873063 publish_errors=0 encode_errors=0 avg_eps=10857
+2026/09/30 21:27:04 INFO stats sim_now=2026-09-30T15:57:03Z samples=967607 published=973910 publish_errors=0 encode_errors=0 avg_eps=10772
+2026/09/30 21:27:14 INFO stats sim_now=2026-09-30T15:57:13Z samples=1067607 published=1074900 publish_errors=0 encode_errors=0 avg_eps=10704
+2026/09/30 21:27:24 INFO stats sim_now=2026-09-30T15:57:23Z samples=1167607 published=1175910 publish_errors=0 encode_errors=0 avg_eps=10650
+2026/09/30 21:27:34 INFO stats sim_now=2026-09-30T15:57:33Z samples=1267607 published=1276919 publish_errors=0 encode_errors=0 avg_eps=10604
+2026/09/30 21:27:44 INFO stats sim_now=2026-09-30T15:57:43Z samples=1367608 published=1377833 publish_errors=0 encode_errors=0 avg_eps=10565
+2026/09/30 21:27:54 INFO stats sim_now=2026-09-30T15:57:53Z samples=1467608 published=1478752 publish_errors=0 encode_errors=0 avg_eps=10531
+2026/09/30 21:28:04 INFO stats sim_now=2026-09-30T15:58:03Z samples=1567608 published=1579695 publish_errors=0 encode_errors=0 avg_eps=10502
+2026/09/30 21:28:14 INFO stats sim_now=2026-09-30T15:58:13Z samples=1667608 published=1680715 publish_errors=0 encode_errors=0 avg_eps=10477
+2026/09/30 21:28:24 INFO stats sim_now=2026-09-30T15:58:23Z samples=1767608 published=1781747 publish_errors=0 encode_errors=0 avg_eps=10455
+2026/09/30 21:28:34 INFO stats sim_now=2026-09-30T15:58:33Z samples=1867608 published=1882613 publish_errors=0 encode_errors=0 avg_eps=10435
+2026/09/30 21:28:44 INFO stats sim_now=2026-09-30T15:58:43Z samples=1967608 published=1983453 publish_errors=0 encode_errors=0 avg_eps=10416
+2026/09/30 21:28:54 INFO stats sim_now=2026-09-30T15:58:53Z samples=2067608 published=2084279 publish_errors=0 encode_errors=0 avg_eps=10400
+2026/09/30 21:29:04 INFO stats sim_now=2026-09-30T15:59:03Z samples=2167608 published=2185218 publish_errors=0 encode_errors=0 avg_eps=10385
+2026/09/30 21:29:14 INFO stats sim_now=2026-09-30T15:59:13Z samples=2267608 published=2286110 publish_errors=0 encode_errors=0 avg_eps=10372
+2026/09/30 21:29:24 INFO stats sim_now=2026-09-30T15:59:22Z samples=2365853 published=2385234 publish_errors=0 encode_errors=0 avg_eps=10352
+2026/09/30 21:29:34 INFO stats sim_now=2026-09-30T15:59:33Z samples=2467608 published=2487936 publish_errors=0 encode_errors=0 avg_eps=10348
+2026/09/30 21:29:36 INFO stats sim_now=2026-09-30T15:59:33Z samples=2467608 published=2487936 publish_errors=0 encode_errors=0 avg_eps=10247
+2026/09/30 21:29:36 INFO https dropped_records=0

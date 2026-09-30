@@ -1,0 +1,10 @@
+published 1896122  https_dropped 0
+gateway accepted 1875371 rejected 1918 duplicates 18833  unaccounted 0
+processor events 1875371  raw-sink events 0
+demo alert DTC_RAISED P0A7E SEVERITY_CRITICAL: gateway-ingest -> processed 1549 ms, -> Kafka append 1670 ms
+demo alert DTC_RAISED P0A7E SEVERITY_CRITICAL: gateway-ingest -> processed 18 ms, -> Kafka append 20 ms
+all alerts with a trigger (n=1): latency <= p50 0.05 s, p95 0.05 s, p99 0.05 s (bucket upper bounds)
+sink kafka: 1586 batch writes, mean 10 ms
+sink redis: 1586 batch writes, mean 36 ms
+sink scylla: 130 batch writes, mean 2357 ms
+max lag processor 65848  raw-sink 1076947

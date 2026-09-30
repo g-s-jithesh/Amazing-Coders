@@ -1,0 +1,173 @@
+# HELP backpressure_active 1 while the producer backlog is above the high watermark.
+# TYPE backpressure_active gauge
+backpressure_active 0
+# HELP dedup_degraded_total Messages whose Bloom hits could not be confirmed (Redis down); kept.
+# TYPE dedup_degraded_total counter
+dedup_degraded_total 1
+# HELP dedup_hits_total Duplicates dropped after Redis confirmation.
+# TYPE dedup_hits_total counter
+dedup_hits_total 895692
+# HELP dlq_total Records sent to telemetry.dlq.v1 by reason.
+# TYPE dlq_total counter
+dlq_total{reason="AUTH"} 0
+dlq_total{reason="DECODE"} 1744
+dlq_total{reason="DTC_FORMAT"} 1719
+dlq_total{reason="IDENTITY_MISMATCH"} 0
+dlq_total{reason="OVERSIZE"} 0
+dlq_total{reason="RANGE"} 1719
+dlq_total{reason="SCHEMA"} 0
+dlq_total{reason="UNKNOWN_OEM"} 0
+dlq_total{reason="UNKNOWN_SCHEMA_VERSION"} 1705
+dlq_total{reason="VIN_CHECKSUM"} 1741
+dlq_total{reason="VIN_FORMAT"} 0
+# HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 5.9378e-05
+go_gc_duration_seconds{quantile="0.25"} 0.000851323
+go_gc_duration_seconds{quantile="0.5"} 0.002078396
+go_gc_duration_seconds{quantile="0.75"} 0.005452357
+go_gc_duration_seconds{quantile="1"} 0.284568242
+go_gc_duration_seconds_sum 10.560657717
+go_gc_duration_seconds_count 1867
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent.
+# TYPE go_gc_gogc_percent gauge
+go_gc_gogc_percent 100
+# HELP go_gc_gomemlimit_bytes Go runtime memory limit configured by the user, otherwise math.MaxInt64. This value is set by the GOMEMLIMIT environment variable, and the runtime/debug.SetMemoryLimit function. Sourced from /gc/gomemlimit:bytes.
+# TYPE go_gc_gomemlimit_bytes gauge
+go_gc_gomemlimit_bytes 9.223372036854776e+18
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 52
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.24.13"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 5.0116536e+07
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated in heap until now, even if released already. Equals to /gc/heap/allocs:bytes.
+# TYPE go_memstats_alloc_bytes_total counter
+go_memstats_alloc_bytes_total 8.5229614704e+10
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table. Equals to /memory/classes/profiling/buckets:bytes.
+# TYPE go_memstats_buck_hash_sys_bytes gauge
+go_memstats_buck_hash_sys_bytes 4176
+# HELP go_memstats_frees_total Total number of heap objects frees. Equals to /gc/heap/frees:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_frees_total counter
+go_memstats_frees_total 1.172735174e+09
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata. Equals to /memory/classes/metadata/other:bytes.
+# TYPE go_memstats_gc_sys_bytes gauge
+go_memstats_gc_sys_bytes 4.487744e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and currently in use, same as go_memstats_alloc_bytes. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 5.0116536e+07
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used. Equals to /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_idle_bytes gauge
+go_memstats_heap_idle_bytes 1.19947264e+08
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 5.7655296e+07
+# HELP go_memstats_heap_objects Number of currently allocated objects. Equals to /gc/heap/objects:objects.
+# TYPE go_memstats_heap_objects gauge
+go_memstats_heap_objects 18484
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS. Equals to /memory/classes/heap/released:bytes.
+# TYPE go_memstats_heap_released_bytes gauge
+go_memstats_heap_released_bytes 7.929856e+07
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes + /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_sys_bytes gauge
+go_memstats_heap_sys_bytes 1.7760256e+08
+# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+# TYPE go_memstats_last_gc_time_seconds gauge
+go_memstats_last_gc_time_seconds 1.7907857831346982e+09
+# HELP go_memstats_mallocs_total Total number of heap objects allocated, both live and gc-ed. Semantically a counter version for go_memstats_heap_objects gauge. Equals to /gc/heap/allocs:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_mallocs_total counter
+go_memstats_mallocs_total 1.172753658e+09
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures. Equals to /memory/classes/metadata/mcache/inuse:bytes.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 14496
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system. Equals to /memory/classes/metadata/mcache/inuse:bytes + /memory/classes/metadata/mcache/free:bytes.
+# TYPE go_memstats_mcache_sys_bytes gauge
+go_memstats_mcache_sys_bytes 15704
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures. Equals to /memory/classes/metadata/mspan/inuse:bytes.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 397600
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system. Equals to /memory/classes/metadata/mspan/inuse:bytes + /memory/classes/metadata/mspan/free:bytes.
+# TYPE go_memstats_mspan_sys_bytes gauge
+go_memstats_mspan_sys_bytes 1.77888e+06
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place. Equals to /gc/heap/goal:bytes.
+# TYPE go_memstats_next_gc_bytes gauge
+go_memstats_next_gc_bytes 1.00515842e+08
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations. Equals to /memory/classes/other:bytes.
+# TYPE go_memstats_other_sys_bytes gauge
+go_memstats_other_sys_bytes 1.705864e+06
+# HELP go_memstats_stack_inuse_bytes Number of bytes obtained from system for stack allocator in non-CGO environments. Equals to /memory/classes/heap/stacks:bytes.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 2.752512e+06
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator. Equals to /memory/classes/heap/stacks:bytes + /memory/classes/os-stacks:bytes.
+# TYPE go_memstats_stack_sys_bytes gauge
+go_memstats_stack_sys_bytes 2.752512e+06
+# HELP go_memstats_sys_bytes Number of bytes obtained from system. Equals to /memory/classes/total:byte.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes 1.8834744e+08
+# HELP go_sched_gomaxprocs_threads The current runtime.GOMAXPROCS setting, or the number of operating system threads that can execute user-level Go code simultaneously. Sourced from /sched/gomaxprocs:threads.
+# TYPE go_sched_gomaxprocs_threads gauge
+go_sched_gomaxprocs_threads 12
+# HELP go_threads Number of OS threads created.
+# TYPE go_threads gauge
+go_threads 24
+# HELP ingest_events_total Records by OEM and result (accepted | rejected | duplicate).
+# TYPE ingest_events_total counter
+ingest_events_total{oem="",result="duplicate"} 895692
+ingest_events_total{oem="oem_a",result="accepted"} 3.382129e+06
+ingest_events_total{oem="oem_a",result="rejected"} 3966
+ingest_events_total{oem="oem_b",result="accepted"} 2.250748e+06
+ingest_events_total{oem="oem_b",result="rejected"} 2438
+ingest_events_total{oem="oem_c",result="accepted"} 1.903544e+06
+ingest_events_total{oem="oem_c",result="rejected"} 2224
+# HELP mqtt_unacked MQTT messages received but not yet acknowledged.
+# TYPE mqtt_unacked gauge
+mqtt_unacked 0
+# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
+# TYPE process_cpu_seconds_total counter
+process_cpu_seconds_total 1106.63
+# HELP process_max_fds Maximum number of open file descriptors.
+# TYPE process_max_fds gauge
+process_max_fds 1.048576e+06
+# HELP process_network_receive_bytes_total Number of bytes received by the process over the network.
+# TYPE process_network_receive_bytes_total counter
+process_network_receive_bytes_total 3.811878599e+09
+# HELP process_network_transmit_bytes_total Number of bytes sent by the process over the network.
+# TYPE process_network_transmit_bytes_total counter
+process_network_transmit_bytes_total 2.532383492e+09
+# HELP process_open_fds Number of open file descriptors.
+# TYPE process_open_fds gauge
+process_open_fds 102
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# TYPE process_resident_memory_bytes gauge
+process_resident_memory_bytes 1.1882496e+08
+# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
+# TYPE process_start_time_seconds gauge
+process_start_time_seconds 1.79078272671e+09
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+# TYPE process_virtual_memory_bytes gauge
+process_virtual_memory_bytes 1.407852544e+09
+# HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
+# TYPE process_virtual_memory_max_bytes gauge
+process_virtual_memory_max_bytes 1.8446744073709552e+19
+# HELP produce_latency_seconds Kafka produce until all acks, per message.
+# TYPE produce_latency_seconds histogram
+produce_latency_seconds_bucket{le="0.001"} 9
+produce_latency_seconds_bucket{le="0.002"} 13
+produce_latency_seconds_bucket{le="0.004"} 1234
+produce_latency_seconds_bucket{le="0.008"} 95771
+produce_latency_seconds_bucket{le="0.016"} 621059
+produce_latency_seconds_bucket{le="0.032"} 1.760803e+06
+produce_latency_seconds_bucket{le="0.064"} 3.581541e+06
+produce_latency_seconds_bucket{le="0.128"} 5.045883e+06
+produce_latency_seconds_bucket{le="0.256"} 5.493413e+06
+produce_latency_seconds_bucket{le="0.512"} 5.624813e+06
+produce_latency_seconds_bucket{le="1.024"} 5.730773e+06
+produce_latency_seconds_bucket{le="2.048"} 5.823316e+06
+produce_latency_seconds_bucket{le="4.096"} 5.884008e+06
+produce_latency_seconds_bucket{le="8.192"} 5.917373e+06
+produce_latency_seconds_bucket{le="+Inf"} 5.921448e+06
+produce_latency_seconds_sum 1.0465142701341547e+06
+produce_latency_seconds_count 5.921448e+06

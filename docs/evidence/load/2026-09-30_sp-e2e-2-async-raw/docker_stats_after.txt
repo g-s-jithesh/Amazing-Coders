@@ -1,0 +1,7 @@
+kilowatt-scylla-1 cpu=0.93% mem=1.014GiB / 13.81GiB
+kilowatt-stream-processor-1 cpu=0.43% mem=912.8MiB / 13.81GiB
+kilowatt-ingest-gateway-1 cpu=0.39% mem=79.86MiB / 13.81GiB
+kilowatt-mosquitto-1 cpu=0.04% mem=7.504MiB / 13.81GiB
+kilowatt-redis-1 cpu=0.31% mem=322.4MiB / 13.81GiB
+kilowatt-postgres-1 cpu=0.00% mem=150.2MiB / 13.81GiB
+kilowatt-kafka-1 cpu=267.47% mem=1.753GiB / 13.81GiB

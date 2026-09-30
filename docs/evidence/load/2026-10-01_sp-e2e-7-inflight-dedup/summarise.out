@@ -1,0 +1,8 @@
+published 1896122  https_dropped 0
+gateway accepted 1875371 rejected 1918 duplicates 18833  unaccounted 0
+processor events 1875371  raw-sink events 1875371
+all alerts with a trigger (n=1): latency <= p50 0.1 s, p95 0.1 s, p99 0.1 s (bucket upper bounds)
+sink kafka: 1959 batch writes, mean 7 ms
+sink redis: 1958 batch writes, mean 32 ms
+sink scylla: 193 batch writes, mean 1311 ms
+max lag processor 71936  raw-sink 422823
