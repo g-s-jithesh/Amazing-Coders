@@ -10,12 +10,14 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/adapters/refdata"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/adapters/seed"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/app"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/env"
+	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/fault"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/masterdata"
 )
 
@@ -82,6 +84,9 @@ func runTrace(args []string) error {
 	hours := fs.Float64("hours", 48, "duration")
 	dt := fs.Float64("dt", 1, "step seconds")
 	every := fs.Int("every", 60, "emit one row every N steps")
+	faultRate := fs.Float64("fault-rate", 0.5, "random fault onsets per vehicle-year (at SoH 100 %)")
+	inject := fs.String("inject", "", "start this fault at sim start (e.g. cooling_degradation)")
+	precursor := fs.Duration("precursor", 48*time.Hour, "precursor length for --inject")
 	_ = fs.Parse(args)
 
 	start, err := time.Parse(time.RFC3339, *startS)
@@ -114,22 +119,30 @@ func runTrace(args []string) error {
 		}
 	}
 	one := &masterdata.Dataset{Depots: ds.Depots, Vehicles: ds.Vehicles[idx : idx+1], Duties: ds.Duties[idx : idx+1]}
-	vs, err := app.BuildFleet(one, models, *seedV, start)
+	vs, err := app.BuildFleet(one, models, *seedV, start, app.Options{FaultRatePerYear: *faultRate})
 	if err != nil {
 		return err
 	}
 	v := vs[0]
+	if *inject != "" {
+		k, err := fault.Parse(*inject)
+		if err != nil {
+			return err
+		}
+		v.InjectFault(k, start.UnixMilli(), *precursor)
+	}
 	w := bufio.NewWriter(os.Stdout)
 	defer w.Flush()
-	fmt.Fprintln(w, "ts_ist,mode,evt,lat,lon,speed_kmh,odo_km,soc_pct,pack_voltage_v,pack_current_a,pack_temp_max_c,cell_v_min_mv,cell_v_max_mv,ambient_c,charge_power_kw,soh_true")
+	fmt.Fprintln(w, "ts_ist,mode,evt,lat,lon,speed_kmh,odo_km,soc_pct,pack_voltage_v,pack_current_a,pack_temp_max_c,cell_v_min_mv,cell_v_max_mv,isolation_kohm,hv_interlock_ok,aux_12v_v,ambient_c,charge_power_kw,dtc,soh_true")
 	for i := 0; i < int(*hours*3600 / *dt); i++ {
 		now := start.Add(time.Duration(float64(i) * *dt * float64(time.Second)))
 		app.StepAll(vs, now, *dt, 1)
 		for periodic := i%*every == 0; periodic || v.PendingEvents() > 0; periodic = false {
 			s := v.Sample(now.UnixMilli())
-			fmt.Fprintf(w, "%s,%s,%d,%.6f,%.6f,%.1f,%.3f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.1f,%.2f,%.5f\n",
+			fmt.Fprintf(w, "%s,%s,%d,%.6f,%.6f,%.1f,%.3f,%.2f,%.1f,%.1f,%.1f,%d,%d,%.0f,%t,%.2f,%.1f,%.2f,%s,%.5f\n",
 				now.In(env.IST).Format("2006-01-02T15:04:05"), v.Mode, s.Evt, s.Lat, s.Lon, s.SpeedKmh, s.OdoKm, s.SoCPct,
-				s.PackVoltageV, s.PackCurrentA, s.PackTempMaxC, s.CellVMinMv, s.CellVMaxMv, s.AmbientC, s.ChargePowerKW, v.Batt.SoH())
+				s.PackVoltageV, s.PackCurrentA, s.PackTempMaxC, s.CellVMinMv, s.CellVMaxMv, s.IsolationKohm, s.HVInterlockOK, s.Aux12vV,
+				s.AmbientC, s.ChargePowerKW, strings.Join(s.DTC, "|"), v.Batt.SoH())
 		}
 	}
 	return nil

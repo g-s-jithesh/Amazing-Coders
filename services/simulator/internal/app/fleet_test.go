@@ -29,7 +29,7 @@ func fleet(t testing.TB, n int) []*vehicle.Vehicle {
 	if err != nil {
 		t.Fatal(err)
 	}
-	vs, err := BuildFleet(ds, models, 42, start)
+	vs, err := BuildFleet(ds, models, 42, start, Options{FaultRatePerYear: 2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -140,4 +140,48 @@ func BenchmarkStepAll100K(b *testing.B) {
 		StepAll(vs, start.Add(time.Duration(i)*time.Second), 1, 8)
 	}
 	b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N)/100_000, "ns/vehicle")
+}
+
+func TestFaultTruthAndSoHSnapshots(t *testing.T) {
+	ds, err := masterdata.Generate(masterdata.Config{Seed: 3, Vehicles: 500, Tenants: 1, Models: models, WMI: wmis})
+	if err != nil {
+		t.Fatal(err)
+	}
+	vs, err := BuildFleet(ds, models, 3, start, Options{FaultRatePerYear: 20}) // ~0.3 onsets per vehicle in 5 days
+	if err != nil {
+		t.Fatal(err)
+	}
+	var truth []vehicle.FaultTruth
+	var snaps int
+	for i := 0; i < 5*24*60; i++ { // 5 days at dt = 60 s
+		now := start.Add(time.Duration(i) * time.Minute)
+		StepAll(vs, now, 60, 4)
+		truth = append(truth, DrainFaultTruth(vs)...)
+		if i%(24*60) == 0 {
+			s := SnapshotSoH(vs, now)
+			if len(s) != len(vs) || s[0].VIN != vs[0].VIN || s[0].SoHPct <= 0 || s[0].SoHPct > 100 {
+				t.Fatalf("bad snapshot %+v", s[0])
+			}
+			snaps++
+		}
+	}
+	if snaps != 5 || len(truth) < 50 {
+		t.Fatalf("snapshots=%d fault records=%d", snaps, len(truth))
+	}
+	for _, r := range truth {
+		if r.Injected || r.PrecursorStartMs >= r.DTCMs || r.DTCMs >= r.RepairMs || r.DTC == "" {
+			t.Fatalf("bad truth %+v", r)
+		}
+	}
+	if len(DrainFaultTruth(vs)) != 0 {
+		t.Fatal("drain must clear")
+	}
+}
+
+func TestNoiseRNGIsSeparateAndDeterministic(t *testing.T) {
+	a, b, v := NoiseRNG(1, "VIN"), NoiseRNG(1, "VIN"), VehicleRNG(1, "VIN")
+	x, y, z := a.Uint64(), b.Uint64(), v.Uint64()
+	if x != y || x == z || NoiseRNG(1, "OTHER").Uint64() == x {
+		t.Fatal("noise RNG must be deterministic per VIN and differ from the vehicle stream")
+	}
 }

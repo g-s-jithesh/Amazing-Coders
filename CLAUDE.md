@@ -574,7 +574,7 @@ Replace the targets with measured values from `docs/evidence/`. Never ship a tar
 - **Definition of Done for a change:** code, tests (unit + integration if it touches I/O), lint/type-check clean, docs updated (feature matrix, OpenAPI/AsyncAPI if contracts changed, ADR if architectural), and CI green.
 - **Commits:** Conventional Commits (`feat(dispatch): …`, `fix(gateway): …`). Keep PRs small. Every team member must have commits.
 - **Python:** 3.12, FastAPI, SQLAlchemy 2 / SQLModel, Pydantic v2, `ruff` + `mypy --strict`, async I/O, `confluent-kafka`.
-- **Go:** 1.23+, `franz-go` for Kafka, `golangci-lint`, context everywhere, no global state.
+- **Go:** 1.24+ (parquet-go needs it), `franz-go` for Kafka, `golangci-lint`, context everywhere, no global state.
 - **TS:** strict mode, eslint + prettier, and no `any` without a comment.
 - **Performance hygiene:** batch Kafka produce/consume, reuse connections, avoid ORM N+1 queries (verify with query logging in tests), and never do per-event network calls in the hot path when a batch or cache works.
 - **When unsure between two designs**, pick the simpler one that still meets the NFR. Record the alternative in an ADR's "Options considered".

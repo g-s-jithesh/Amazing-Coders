@@ -26,6 +26,29 @@ const (
 	EvtDTCRaised  EventType = 8
 )
 
+// SchemaVersion is the canonical schema version the simulator emits.
+const SchemaVersion = 1
+
+// Malformed marks a sample the noise layer deliberately corrupted. Each kind maps to exactly one
+// ingest-gateway DLQ reason, so DLQ counts can be checked against what was injected.
+type Malformed uint8
+
+const (
+	WellFormed       Malformed = iota
+	MalVINChecksum             // → VIN_CHECKSUM
+	MalDTCFormat               // → DTC_FORMAT
+	MalSchemaVersion           // → UNKNOWN_SCHEMA_VERSION
+	MalRange                   // → RANGE
+	MalDecode                  // → DECODE (encoder truncates the payload)
+)
+
+// Dropout bits mark sensor groups missing from a sample; encoders omit those fields.
+const (
+	DropGPS   uint8 = 1 << iota // lat, lon, speed
+	DropTemp                    // pack temps
+	DropCells                   // cell voltages
+)
+
 type Sample struct {
 	VIN, OEM                   string
 	TsEventMs                  int64
@@ -44,4 +67,7 @@ type Sample struct {
 	ChargePowerKW              float32
 	DTC                        []string
 	Evt                        EventType
+	SchemaVersion              uint32
+	Dropout                    uint8     // DropGPS | DropTemp | DropCells
+	Malformed                  Malformed // set only by the noise layer
 }

@@ -9,13 +9,16 @@ import (
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/battery"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/env"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
+	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vin"
 )
+
+var testVIN, _ = vin.Build("0KC", "DV45N", 2024, 'C', 1)
 
 var t0 = time.Date(2026, 9, 1, 0, 0, 0, 0, env.IST) // midnight IST
 
 func newVehicle(depart, ret int, soc float64, seed uint64) *Vehicle {
 	spec := Spec{
-		VIN: "0KCDV45N0RB000001", OEM: "oem_c", City: "Chennai",
+		VIN: testVIN, OEM: "oem_c", City: "Chennai",
 		WhPerKm: 190, MaxACKW: 11,
 		HomeLat: 13.05, HomeLon: 80.25, CityLat: 13.0827, CityLon: 80.2707, CitySpanDeg: 0.10,
 		DepartMin: depart, ReturnMin: ret, PlannedKm: 120, IsolationBaseKohm: 2500,

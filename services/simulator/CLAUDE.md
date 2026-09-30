@@ -45,6 +45,12 @@ bench/
 5. **Noise rates** fall within ±10% of the configured values over 1M events. Malformed payloads are exactly the configured types, so the gateway's DLQ reasons can be checked against them.
 6. **VINs.** 17 characters, no I/O/Q, valid check digit, synthetic WMIs only. The malformed-VIN noise deliberately breaks the check digit.
 
+## Demo fault injection
+
+Use a precursor of **≥ 12 h sim time** (compress it with `--speedup`). The pack's thermal time constant is ~3 h, so a
+2 h cooling-degradation precursor raises P0A7E while the pack is only ~9 °C above ambient, which is not believable on
+camera. Measured at DTC time (Bengaluru, Sept): 2 h → +9 °C, 6 h → +14 °C, 12 h → +17 °C, 48 h → +25 °C.
+
 ## Identity model
 
 - A **demo subset** (e.g. 1,000 vehicles) connects over MQTT with **per-vehicle mTLS certs** (CN = VIN), issued by `infra/pki` scripts at startup into a tmpfs.

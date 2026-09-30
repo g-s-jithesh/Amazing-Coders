@@ -14,6 +14,7 @@ import (
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/battery"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/energy"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/env"
+	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/fault"
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/telemetry"
 )
 
@@ -54,6 +55,7 @@ type Spec struct {
 	DepartMin, ReturnMin          int // IST minute of day
 	PlannedKm                     float64
 	IsolationBaseKohm             float64
+	FaultRatePerYear              float64 // expected random fault onsets per vehicle-year at SoH 100 %
 }
 
 // Tick carries the per-tick clock, computed once for the whole fleet.
@@ -82,11 +84,19 @@ type Vehicle struct {
 	seq                                   uint64
 	evts                                  [4]telemetry.EventType // pending, oldest first
 	nEvt                                  int
+
+	fault            activeFault
+	fx               fault.Effects
+	nextFaultMs      int64
+	interlockOpen    bool
+	interlockCloseMs int64
+	truth            []FaultTruth
 }
 
 // New places the vehicle parked at its home depot.
 func New(spec Spec, pack battery.Params, batt battery.State, rng *rand.Rand) *Vehicle {
-	return &Vehicle{Spec: spec, Pack: pack, Batt: batt, rng: rng, Lat: spec.HomeLat, Lon: spec.HomeLon, lastShiftDay: math.MinInt64}
+	return &Vehicle{Spec: spec, Pack: pack, Batt: batt, rng: rng, Lat: spec.HomeLat, Lon: spec.HomeLon,
+		lastShiftDay: math.MinInt64, nextFaultMs: math.MaxInt64, fx: fault.Healthy}
 }
 
 func (v *Vehicle) push(e telemetry.EventType) {
@@ -107,6 +117,7 @@ func (v *Vehicle) shiftDay(tk Tick) int64 {
 // Step advances the vehicle by tk.Dt seconds.
 func (v *Vehicle) Step(tk Tick, ambientC float64) {
 	v.AmbientC = ambientC
+	v.stepFault(tk)
 	inShift := env.InShift(tk.MinIST, v.DepartMin, v.ReturnMin)
 
 	switch v.Mode {
@@ -245,13 +256,17 @@ func (v *Vehicle) Sample(nowMs int64) telemetry.Sample {
 	spread := 1 + 2*cRate
 	volts := p.TerminalV(b, v.CurrentA)
 	cellMv := volts / float64(p.Series) * 1000
-	imbMv := 8 + 60*(1-b.SoH()) + 10*cRate
+	imbMv := 8 + 60*(1-b.SoH()) + 10*cRate + v.fx.ExtraImbalanceMv
 
-	aux := 12.6
+	aux := 12.6 - v.fx.AuxSagV
 	if v.Mode == Driving || v.Mode == Returning || v.ChargeKW > 0 {
-		aux = 13.9 // DC-DC converter active
+		aux = 13.9 - 0.3*v.fx.AuxSagV // DC-DC converter active
 	} else if v.Mode == Stranded {
-		aux = 12.2
+		aux = 12.2 - v.fx.AuxSagV
+	}
+	var dtc []string
+	if v.fault.raised {
+		dtc = fault.Catalogue[v.fault.kind].DTC // shared, read-only
 	}
 	cs := telemetry.ChargeIdle
 	if v.ChargeKW > 0 {
@@ -263,8 +278,8 @@ func (v *Vehicle) Sample(nowMs int64) telemetry.Sample {
 		SoCPct: float32(b.SoC * 100), PackVoltageV: float32(volts), PackCurrentA: float32(v.CurrentA),
 		PackTempMinC: float32(b.TempC - 0.4*spread), PackTempMaxC: float32(b.TempC + 0.6*spread),
 		CellVMinMv: uint32(cellMv - imbMv/2), CellVMaxMv: uint32(cellMv + imbMv/2),
-		IsolationKohm: float32(v.IsolationBaseKohm), HVInterlockOK: true,
+		IsolationKohm: float32(v.IsolationBaseKohm * v.fx.IsolationFactor), HVInterlockOK: !v.interlockOpen,
 		Aux12vV: float32(aux), AmbientC: float32(v.AmbientC),
-		ChargeState: cs, ChargePowerKW: float32(v.ChargeKW), Evt: evt,
+		ChargeState: cs, ChargePowerKW: float32(v.ChargeKW), DTC: dtc, Evt: evt, SchemaVersion: telemetry.SchemaVersion,
 	}
 }

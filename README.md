@@ -7,7 +7,7 @@ Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated wi
 
 ## Quick start
 
-Requires Docker, GNU Make, Go 1.23+.
+Requires Docker, GNU Make, Go 1.24+.
 
 ```bash
 cp .env.example .env   # dev-only values
@@ -21,9 +21,10 @@ Trace one simulated vehicle (CSV, includes the simulator-only `soh_true` column)
 
 ```bash
 cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference --hours 48 --every 60 > trace.csv
+# with a fault: --inject cooling_degradation|cell_drift|insulation_wear|connector_issue|weak_aux_battery --precursor 12h
 ```
 
-`make seed` needs Go 1.23+. It is deterministic: the same `SEED`/`VEHICLES`/`TENANTS` always produce byte-identical data.
+`make seed` needs Go 1.24+. It is deterministic: the same `SEED`/`VEHICLES`/`TENANTS` always produce byte-identical data.
 
 | Service | Address |
 |---------|---------|

@@ -15,6 +15,11 @@ import (
 	"github.com/g-s-jithesh/Amazing-Coders/services/simulator/internal/domain/vehicle"
 )
 
+// Options tune the fleet build.
+type Options struct {
+	FaultRatePerYear float64 // random fault onsets per vehicle-year at SoH 100 % (0 disables)
+}
+
 // VehicleRNG seeds a vehicle's private RNG from hash(seed, VIN), so its trajectory does not depend
 // on which shard or goroutine simulates it.
 func VehicleRNG(seed uint64, vin string) *rand.Rand {
@@ -23,9 +28,17 @@ func VehicleRNG(seed uint64, vin string) *rand.Rand {
 	return rand.New(rand.NewPCG(seed, h.Sum64()))
 }
 
+// NoiseRNG is a second per-vehicle stream for the noise layer, so enabling or changing noise never
+// alters a vehicle's physical trajectory.
+func NoiseRNG(seed uint64, vin string) *rand.Rand {
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(vin))
+	return rand.New(rand.NewPCG(seed^0x6e6f697365, h.Sum64())) // "noise"
+}
+
 // BuildFleet creates live vehicles for the dataset at sim start time `start`. Packs are pre-aged
 // from commissioning to start with the closed-form ageing model and each pack's quality factor.
-func BuildFleet(ds *masterdata.Dataset, models []masterdata.Model, seed uint64, start time.Time) ([]*vehicle.Vehicle, error) {
+func BuildFleet(ds *masterdata.Dataset, models []masterdata.Model, seed uint64, start time.Time, opts Options) ([]*vehicle.Vehicle, error) {
 	modelByCode := map[string]masterdata.Model{}
 	for _, m := range models {
 		modelByCode[m.Code] = m
@@ -62,16 +75,48 @@ func BuildFleet(ds *masterdata.Dataset, models []masterdata.Model, seed uint64, 
 			pack.PreAge(&batt, years, env.AmbientC(dep.City, start)+3, 0.65, years*365.25*dailyEFC)
 		}
 
-		out[i] = vehicle.New(vehicle.Spec{
+		v := vehicle.New(vehicle.Spec{
 			VIN: mv.VIN, OEM: mv.OEM, City: dep.City,
 			WhPerKm: float64(m.WhPerKm), MaxACKW: m.MaxACKW,
 			HomeLat: dep.Lat, HomeLon: dep.Lon,
 			CityLat: city.Lat, CityLon: city.Lon, CitySpanDeg: city.SpanDeg,
 			DepartMin: duty.DepartMin, ReturnMin: duty.ReturnMin, PlannedKm: float64(duty.PlannedKm),
 			IsolationBaseKohm: 1500 + 2500*rng.Float64(),
+			FaultRatePerYear:  opts.FaultRatePerYear,
 		}, pack, batt, rng)
+		v.ScheduleNextFault(start.UnixMilli())
+		out[i] = v
 	}
 	return out, nil
+}
+
+// SoHTruth is one pack's true state at a point in time (ground-truth sink only).
+type SoHTruth struct {
+	VIN     string
+	AsOfMs  int64
+	SoHPct  float64
+	QCalPct float64
+	QCycPct float64
+	EFC     float64
+}
+
+// SnapshotSoH records every vehicle's true SoH; call once per simulated day.
+func SnapshotSoH(vs []*vehicle.Vehicle, now time.Time) []SoHTruth {
+	out := make([]SoHTruth, len(vs))
+	for i, v := range vs {
+		b := v.Batt
+		out[i] = SoHTruth{v.VIN, now.UnixMilli(), b.SoH() * 100, b.QCal * 100, b.QCyc * 100, b.EFC}
+	}
+	return out
+}
+
+// DrainFaultTruth collects fault records produced since the last call.
+func DrainFaultTruth(vs []*vehicle.Vehicle) []vehicle.FaultTruth {
+	var out []vehicle.FaultTruth
+	for _, v := range vs {
+		out = append(out, v.DrainTruth()...)
+	}
+	return out
 }
 
 // TickAt builds the shared per-tick clock.
