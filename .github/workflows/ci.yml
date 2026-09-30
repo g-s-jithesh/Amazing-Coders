@@ -1,0 +1,76 @@
+# CI (CLAUDE.md §14): lint → unit (race, coverage) → proto → images. Integration, contract, BDD,
+# scans and nightly load/chaos are added as those suites land.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: go (${{ matrix.module }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [libs/go-common, services/simulator, services/ingest-gateway, services/stream-processor]
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache-dependency-path: ${{ matrix.module }}/go.sum
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - name: vet
+        run: go vet ./...
+      - name: test (race, coverage)
+        run: go test -race -timeout 5m -coverprofile=cover.out ./...
+      - name: coverage summary
+        run: go tool cover -func=cover.out | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ strategy.job-index }}
+          path: ${{ matrix.module }}/cover.out
+
+  proto:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bufbuild/buf-action@v1
+        with:
+          input: libs/proto
+          lint: true
+          format: false
+          breaking: ${{ github.event_name == 'pull_request' }}
+          breaking_against: "${{ github.event.repository.clone_url }}#branch=main,subdir=libs/proto"
+          push: false
+
+  images:
+    runs-on: ubuntu-latest
+    needs: go
+    strategy:
+      matrix:
+        service: [ingest-gateway, stream-processor]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          push: false
+          tags: kilowatt/${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
