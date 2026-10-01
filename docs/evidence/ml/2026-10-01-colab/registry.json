@@ -1,0 +1,10 @@
+{
+ "soh": {
+  "path": "soh_lgbm.txt",
+  "sha256": "e009c7d5657f30785535171dfbec654e7d108a222aaafd6144a0328f97493a0c"
+ },
+ "fault_risk": {
+  "path": "fault_risk_lgbm.txt",
+  "sha256": "b0e39311b3ff298e5e81078498f27feafa374f034a7f68f8021a40dceb80e848"
+ }
+}

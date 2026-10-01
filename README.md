@@ -79,7 +79,7 @@ so `make down` first if you want to start from the beginning).
 
 `ml/` builds datasets from simulator traces (`build_dataset.py`), trains LightGBM models and compares them with baselines
 (`train.py`), with leakage tests (`make`-free: `cd ml && uv run pytest`). Datasets are committed (synthetic, 1 MB).
-Train on Colab with `ml/train_colab.ipynb` (about a minute on CPU). Reports: `ml/reports/*/report.json`.
+Trained on Colab with `ml/train_colab.ipynb` (about a minute on CPU). Reports: `ml/reports/*/report.json`; summary and model files: `docs/evidence/ml/2026-10-01-colab/`. Results: SoH MAE 0.40 pp (raw coulomb count 0.29, age baseline 2.40); fault-risk PR-AUC 0.57 vs 0.36 for rules, targets for recall and lead time not met.
 
 ## Layout
 

@@ -22,7 +22,7 @@ Sections point to the source of truth; numbers live in `docs/evidence/` and nowh
 9. **Test strategy.** Unit + property tests (hypothesis), integration tests against the running stack (`-m integration`),
    leakage tests in `ml/`, GitHub Actions: Go (race, coverage), buf lint, Python (ruff, mypy --strict, coverage gate), image builds.
 10. **Observability.** Prometheus metrics on every service; dashboards not built.
-11. **AI/ML.** `ml/reports/*/report.json` (protocol, baselines, bootstrap CIs, honest comparison); trained on Google Colab (`ml/train_colab.ipynb`).
+11. **AI/ML.** `docs/evidence/ml/2026-10-01-colab/` (protocol, baselines, bootstrap CIs); trained on Google Colab (`ml/train_colab.ipynb`). SoH MAE 0.40 pp (raw coulomb count 0.29, linear-by-age 2.40); fault risk PR-AUC 0.57 vs 0.36 for threshold rules, recall 0.43 at precision 0.5 and 39 h median lead time (targets not met).
 12. **ADRs, risks, future work.** `docs/adr/`, `docs/risks.md`.
 13. **Demo.** `docs/demo-script.md`.
 14. **Repository checklist.** README, Makefile, `.env.example`, CI, evidence folders; tag `v1.0-submission`.

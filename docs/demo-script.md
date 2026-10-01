@@ -12,4 +12,4 @@ Console defaults: tenant "Synthetic Logistics A", role dispatcher.
 | 2:00 | **Battery health**: distribution and lowest-SoH packs. | Which packs are weakest across the fleet right now. |
 | 2:30 | **Charging dispatch planner**: pick a depot, Generate plan. | Dynamic programming per vehicle, coupled by site power and connector limits; cost is energy plus battery wear. Zero missed departures. |
 | 3:15 | Approve. | Only a dispatcher can approve; it goes through a transactional outbox to `dispatch.commands.v1`. |
-| 3:40 | Show `docs/evidence/dispatch/2026-10-01-backtest-5x30/README.md` and `ml/reports/*/report.json`. | Measured results: energy cost -10.75 % over 30 days, SoH model vs baselines, fault-risk PR-AUC vs rules. Not done: public API, map, cluster load test. |
+| 3:40 | Show `docs/evidence/dispatch/2026-10-01-backtest-5x30/README.md` and `docs/evidence/ml/2026-10-01-colab/README.md`. | Measured results: energy cost -10.75 % over 30 days, SoH model vs baselines, fault-risk PR-AUC vs rules. Not done: public API, map, cluster load test. |
