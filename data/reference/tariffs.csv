@@ -1,0 +1,4 @@
+tariff_code,dow,start_min,end_min,price_paise_per_kwh,source_status
+DEPOT_TOD_SYNTH,,1320,360,385,synthetic: night off-peak; level and 22:00-06:00 window follow the BESCOM EV ToD proposal (2019; WRI India / Deccan Herald) - not a current tariff
+DEPOT_TOD_SYNTH,,360,1080,485,synthetic: day rate; level follows the same proposal - not a current tariff
+DEPOT_TOD_SYNTH,,1080,1320,600,synthetic: evening peak surcharge (illustrative; no source) - not a current tariff

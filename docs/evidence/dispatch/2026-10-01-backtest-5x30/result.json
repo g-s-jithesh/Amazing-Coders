@@ -1,0 +1,195 @@
+{
+ "kind": "dispatch_backtest",
+ "args": {
+  "depots": 5,
+  "days": 30,
+  "start": "2026-09-01T00:00:00+05:30",
+  "tariff": "DEPOT_TOD_SYNTH",
+  "seed_dir": "C:\\Users\\gsjit\\OneDrive\\Documents\\motorq\\data\\seed"
+ },
+ "depots": [
+  {
+   "depot_id": "005a5978-3944-4a99-9dc5-486a5b2150f8",
+   "vehicles": 247,
+   "site_cap_kw": 1858.0,
+   "connectors": 124,
+   "optimised": {
+    "energy_kwh": 170510.6,
+    "energy_cost_paise": 75576152,
+    "degradation_cost_paise": 110466069,
+    "total_cost_paise": 186042221,
+    "departures": 7410,
+    "missed_departures": 0,
+    "peak_kw": 1001.8,
+    "slots_over_cap": 0
+   },
+   "baseline": {
+    "energy_kwh": 170273.5,
+    "energy_cost_paise": 83787075,
+    "degradation_cost_paise": 112607264,
+    "total_cost_paise": 196394339,
+    "departures": 7410,
+    "missed_departures": 0,
+    "peak_kw": 667.0,
+    "slots_over_cap": 0
+   },
+   "methods": {
+    "LAGRANGIAN_REPAIRED": 30
+   },
+   "plan_s_median": 1.239,
+   "plan_s_max": 1.479
+  },
+  {
+   "depot_id": "014fd6eb-de47-4c71-b805-a76a4b8c954c",
+   "vehicles": 248,
+   "site_cap_kw": 1872.0,
+   "connectors": 124,
+   "optimised": {
+    "energy_kwh": 175788.1,
+    "energy_cost_paise": 77904331,
+    "degradation_cost_paise": 113650809,
+    "total_cost_paise": 191555140,
+    "departures": 7440,
+    "missed_departures": 0,
+    "peak_kw": 1112.1,
+    "slots_over_cap": 0
+   },
+   "baseline": {
+    "energy_kwh": 175525.1,
+    "energy_cost_paise": 86791812,
+    "degradation_cost_paise": 116076542,
+    "total_cost_paise": 202868354,
+    "departures": 7440,
+    "missed_departures": 0,
+    "peak_kw": 803.3,
+    "slots_over_cap": 0
+   },
+   "methods": {
+    "LAGRANGIAN_REPAIRED": 30
+   },
+   "plan_s_median": 0.92,
+   "plan_s_max": 1.443
+  },
+  {
+   "depot_id": "01a946ac-aa03-476b-a918-8f69315f0287",
+   "vehicles": 246,
+   "site_cap_kw": 1771.0,
+   "connectors": 123,
+   "optimised": {
+    "energy_kwh": 171818.8,
+    "energy_cost_paise": 75858734,
+    "degradation_cost_paise": 111005798,
+    "total_cost_paise": 186864532,
+    "departures": 7380,
+    "missed_departures": 0,
+    "peak_kw": 950.0,
+    "slots_over_cap": 0
+   },
+   "baseline": {
+    "energy_kwh": 171566.4,
+    "energy_cost_paise": 82911159,
+    "degradation_cost_paise": 113431965,
+    "total_cost_paise": 196343124,
+    "departures": 7380,
+    "missed_departures": 0,
+    "peak_kw": 689.9,
+    "slots_over_cap": 0
+   },
+   "methods": {
+    "LAGRANGIAN_REPAIRED": 30
+   },
+   "plan_s_median": 0.878,
+   "plan_s_max": 1.265
+  },
+  {
+   "depot_id": "02b57af1-6a80-4824-8895-36f19d77398e",
+   "vehicles": 249,
+   "site_cap_kw": 1842.0,
+   "connectors": 125,
+   "optimised": {
+    "energy_kwh": 180405.8,
+    "energy_cost_paise": 79176450,
+    "degradation_cost_paise": 116524511,
+    "total_cost_paise": 195700961,
+    "departures": 7470,
+    "missed_departures": 0,
+    "peak_kw": 1082.9,
+    "slots_over_cap": 0
+   },
+   "baseline": {
+    "energy_kwh": 180191.7,
+    "energy_cost_paise": 89995115,
+    "degradation_cost_paise": 118991449,
+    "total_cost_paise": 208986564,
+    "departures": 7470,
+    "missed_departures": 0,
+    "peak_kw": 772.4,
+    "slots_over_cap": 0
+   },
+   "methods": {
+    "LAGRANGIAN_REPAIRED": 30
+   },
+   "plan_s_median": 1.483,
+   "plan_s_max": 1.815
+  },
+  {
+   "depot_id": "02c1d755-ec45-4bbb-a66d-eba3668f4eb4",
+   "vehicles": 245,
+   "site_cap_kw": 1975.0,
+   "connectors": 123,
+   "optimised": {
+    "energy_kwh": 176074.3,
+    "energy_cost_paise": 76220173,
+    "degradation_cost_paise": 113709023,
+    "total_cost_paise": 189929196,
+    "departures": 7350,
+    "missed_departures": 0,
+    "peak_kw": 1079.4,
+    "slots_over_cap": 0
+   },
+   "baseline": {
+    "energy_kwh": 175816.0,
+    "energy_cost_paise": 87570325,
+    "degradation_cost_paise": 116202965,
+    "total_cost_paise": 203773290,
+    "departures": 7350,
+    "missed_departures": 0,
+    "peak_kw": 805.0,
+    "slots_over_cap": 0
+   },
+   "methods": {
+    "LAGRANGIAN_REPAIRED": 30
+   },
+   "plan_s_median": 1.359,
+   "plan_s_max": 1.801
+  }
+ ],
+ "totals": {
+  "optimised": {
+   "energy_cost_paise": 384735840,
+   "degradation_cost_paise": 565356210,
+   "total_cost_paise": 950092050,
+   "departures": 37050,
+   "missed_departures": 0,
+   "slots_over_cap": 0
+  },
+  "baseline": {
+   "energy_cost_paise": 431055486,
+   "degradation_cost_paise": 577310185,
+   "total_cost_paise": 1008365671,
+   "departures": 37050,
+   "missed_departures": 0,
+   "slots_over_cap": 0
+  },
+  "saving_total_pct": 5.78,
+  "saving_energy_pct": 10.75
+ },
+ "wall_s": 197.5,
+ "env": {
+  "python": "3.12.11",
+  "machine": "AMD64",
+  "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+  "cpus": 12,
+  "at": "2026-10-01T03:47:10+00:00"
+ }
+}

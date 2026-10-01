@@ -1,0 +1,29 @@
+// Approved depot charging plans (topic dispatch.commands.v1, key = depot_id), published only through the
+// dispatch-optimizer outbox. Idempotent by (plan_id): consumers ignore a plan_id they already applied, and
+// a newer version for the same depot supersedes older ones.
+syntax = "proto3";
+
+package kilowatt.dispatch.v1;
+
+option go_package = "github.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/dispatch/v1;dispatchv1";
+
+message ChargeAssignment {
+  string vehicle_id = 1;
+  int32 connector_index = 2; // index into the depot's connector list (v1 pool model)
+  int64 start_ms = 3; // UTC, slot-aligned
+  int64 end_ms = 4; // exclusive
+  double power_kw = 5;
+}
+
+message PlanPublished {
+  string plan_id = 1;
+  string tenant_id = 2;
+  string depot_id = 3;
+  int32 version = 4;
+  string method = 5; // LAGRANGIAN | LAGRANGIAN_REPAIRED | GREEDY_FALLBACK
+  int64 horizon_start_ms = 6;
+  int32 horizon_slots = 7;
+  string approved_by = 8; // user subject, never a name
+  int64 approved_at_ms = 9;
+  repeated ChargeAssignment assignments = 10;
+}

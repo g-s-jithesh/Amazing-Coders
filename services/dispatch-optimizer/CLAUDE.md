@@ -18,24 +18,26 @@ Reads (via fleet-api API, not its schema): vehicles, depots, chargers, `vehicle_
 
 ```
 app/
-  api/v1/internal/        # plan (async job → DRAFT), get plan, transition status, en-route recommendation
-  application/            # PlanDepotCharging, RecommendEnRouteCharger, BacktestPlans
+  main.py                 # internal API (plan → DRAFT, get, approve); composition root
+  application/            # planning.py (stays, strategy + safety net), plans.py (lifecycle), backtest.py
   domain/
-    schedule/             # single-vehicle DP, Lagrangian coordinator, greedy fallback (Strategy pattern)
-    degradation/          # degradation-cost function (configured coefficients)
-    routing/              # graph (CSR arrays), A* with energy weights, geohash candidate search
-    assign/               # min-cost assignment (scipy linear_sum_assignment)
-    validate/             # independent plan validator (the source of truth for invariants)
-    money.py              # paise arithmetic, rounding rules
-  infrastructure/         # repositories, fleet-api client, redis, graph loader (data/graphs/*.npz)
-  workers/plan_worker.py  # job queue consumer (Redis stream) with time budget
-config/degradation.yaml, config/solver.yaml
+    schedule.py           # single-vehicle / batched DP, evaluate, charge-on-arrival baseline
+    coordinate.py         # Lagrangian coordinator, repair, greedy fallback (Strategy pattern)
+    degradation.py        # degradation-cost function (configured coefficients)
+    tariff.py money.py    # IST slot prices; paise rounding
+    connectors.py         # power profiles → connector assignments
+    validate.py           # independent plan validator (the source of truth for invariants)
+    plan.py               # plan lifecycle state machine
+    routing/ assign/      # en-route A* + min-cost assignment (F-09, not yet built)
+  infrastructure/         # db.py (plans, outbox), kafka.py (contract, producer), files.py (config, tariffs, seed fleet)
+  workers/outbox_relay.py # dispatch.outbox → dispatch.commands.v1
+config/degradation.toml, config/solver.toml
 bench/
 ```
 
 ## Depot planner
 
-- **Horizon:** 24 h in 15-min slots (T = 96). SoC buckets are 1 pp (S = 101). Power levels P = {0, …, min(charger max, vehicle max)}, discretised to ≤ 6 levels.
+- **Horizon:** 15-min slots; 36 h (T = 144) as built, see below. SoC buckets are 1 pp (S = 101). Power levels P = {0, …, min(charger max, vehicle max)}, discretised to ≤ 6 levels.
 - **Transition:** `s' = s + η·P·Δt / usable_kwh(SoH)`, with η per charger type from config. Grid energy = `P·Δt` (you pay for grid-side kWh).
 - **Cost per step:**
   - `tariff[t]·P·Δt`
@@ -44,12 +46,37 @@ bench/
 - **Terminal:** `SoC(departure) ≥ required` is hard. If infeasible, return the best effort + an `INFEASIBLE` flag + the shortfall. **Never silently violate it.**
 - Vectorise the DP over the SoC axis with numpy: O(T·S·P) per vehicle.
 - **Coupling (site power cap):** subgradient updates of λ[site,t] until the cap holds at every slot, or the iteration or time budget runs out. Then repair with the greedy step (reduce power for the vehicle with the most slack).
-- **v1 assumption:** one connector per parked vehicle (document it). v2: connector sharing via time-indexed assignment.
+- **v1 assumption (superseded, see As built):** one connector per parked vehicle.
 - **Budget:** 2 s per depot (config). On timeout or error → greedy fallback (`method=GREEDY_FALLBACK`, flagged in the UI). A circuit breaker in callers.
+
+### As built (Step 7, 2026-10-01)
+
+- **Stays, not vehicles:** a vehicle's duty splits time into depot stays (return → next departure); each
+  stay in progress now or starting in the next 24 h is one DP task. Horizon **144 slots (36 h)** so every
+  such stay ends inside it; re-plan daily (rolling). A later stay is planned from `required − one shift's
+  use` (conservative; the real arrival SoC is at least that).
+- **Two coupling constraints per slot:** site kW cap (λ) **and connector count** (μ): the seed has ~0.5
+  connectors per vehicle, so "one connector per vehicle" (the original v1 assumption) does not hold.
+  Connectors are an AC-capable pool; vehicles may be re-plugged at slot boundaries; `domain/connectors.py`
+  turns profiles into sticky, never-double-booked assignments. DC fast charging is left to en-route (F-09).
+- **Lagrangian alone does not converge** on these integer instances (cohorts jump between slots;
+  measured in `bench/bench_depot.py`): a deterministic ±0.1 % price dither, the least-violation iterate,
+  `patience` early stop, then **batched repair rounds**. A **greedy safety net** is always computed too
+  and kept if it misses fewer departures (the repair can leave a departure short; a test pins this case).
+- **Charger taper is modelled in the DP** (SoC stops at the cap; only energy that fits is billed and
+  stresses the pack), consistent with `evaluate` and the validator.
+- **Config is TOML** (`config/*.toml`, stdlib `tomllib`), not YAML: no extra dependency.
+- Tariff `DEPOT_TOD_SYNTH` (`data/reference/tariffs.csv`) is **synthetic**; its night window and levels
+  follow the reported BESCOM EV ToD proposal; the evening peak is illustrative.
+- **Plan creation is synchronous** within the budget (no job queue yet). Caller identity comes from
+  `X-Tenant-Id`/`X-User-Id`/`X-Roles` until F-10; approve is dispatcher-only; cross-tenant → 404.
+- **Fleet source:** `SeedFleet` (seed CSVs, SoC fixed at 60 %) until fleet-api serves a depot snapshot with
+  live SoC (Step 8). **Outbox relay** is this service's own worker, connecting as `dispatch_relay`
+  (outbox + APPROVED→PUBLISHED only; RLS policies per role).
 
 ## Degradation cost (pillar #1)
 
-- A calendar and cycle stress function of SoC dwell, C-rate and temperature. The **coefficients come from `config/degradation.yaml`** (literature-style defaults or estimated from our data), **never from the simulator's hidden parameters**; that would be leakage and would inflate results.
+- A calendar and cycle stress function of SoC dwell, C-rate and temperature. The **coefficients come from `config/degradation.toml`** (literature-style defaults or estimated from our data), **never from the simulator's hidden parameters**; that would be leakage and would inflate results.
 - Price it as `₹ per pp SoH lost × pack replacement cost / usable SoH range`. Make it configurable and show it in the plan breakdown.
 
 ## En-route recommendation

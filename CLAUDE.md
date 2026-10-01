@@ -81,7 +81,7 @@ Required deliverables: Solution Document (template), README, one-command `docker
 | `simulator` | Go | 100K+ EVs in 3 simulated OEM formats; trips, charging, battery ageing, fault injection, noise | goroutines / replicas (VIN range sharding) |
 | `ingest-gateway` | Go | MQTT shared-subscription consumer + HTTPS batch endpoint (OEM-cloud push); auth, schema validation, VIN/DTC parsing, **OEM adapters → canonical Protobuf**, dedup, DLQ, back-pressure | stateless replicas |
 | `stream-processor` | Go | Event-time windows per VIN; real-time battery safety rules; charge-session detection; 1-min rollups; writes to ScyllaDB and Redis; emits alerts | Kafka partitions (VIN-keyed) |
-| `fleet-api` | Python / FastAPI | Public REST + WebSocket/SSE; tenants, fleets, vehicles, alerts, audit; CQRS read side; alert persistence consumer; outbox relay | stateless replicas |
+| `fleet-api` | Python / FastAPI | Public REST + WebSocket/SSE; tenants, fleets, vehicles, alerts, audit; CQRS read side; alert persistence consumer; outbox relay for its own events (dispatch-optimizer relays its own plan outbox) | stateless replicas |
 | `battery-intel` | Python / FastAPI | SoH estimation, RUL / fault-risk model serving, DTC decoding, fault-signature embeddings + similarity | stateless replicas |
 | `dispatch-optimizer` | Python / FastAPI | Tariffs, chargers, depot schedule DP, en-route routing (A*), fleet assignment, plan versioning | stateless replicas + job queue |
 | `copilot-agent` | Python / LangGraph | LLM agent over MCP tools; RAG over runbooks; approval workflow; audit | stateless replicas |

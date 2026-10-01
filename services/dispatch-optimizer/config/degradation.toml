@@ -1,0 +1,10 @@
+# Degradation-cost coefficients (innovation pillar #1). ASSUMPTIONS, not fitted values and NOT the
+# simulator's ageing parameters (that would be leakage). Order-of-magnitude choices; replace with values
+# estimated from battery-intel SoH history once ml/ has them, and record the change in an ADR.
+cal_pp_per_h = 0.0003            # ≈ 2.6 pp SoH/year at 50 % SoC, 25 °C (assumption)
+cal_soc_k = 1.0                  # calendar fade ×e at 100 % SoC vs 50 % (assumption)
+cal_temp_doubling_c = 10.0       # Arrhenius rule of thumb: rate doubles per +10 °C (assumption)
+cyc_pp_per_efc = 0.01            # 20 pp over 2,000 equivalent full cycles (assumption)
+cyc_c_rate_k = 0.5               # +50 % cycle stress per 1 C (assumption)
+pack_cost_paise_per_kwh = 1_000_000  # ₹10,000 per kWh replacement (assumption)
+usable_soh_range_pp = 20.0       # 100 → 80 % end of life

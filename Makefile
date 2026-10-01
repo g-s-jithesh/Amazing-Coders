@@ -15,7 +15,7 @@ NOISE ?= realistic
 SIM := cd services/simulator && go run ./cmd/simulator
 BUF := docker run --rm -v "$(CURDIR)/libs/proto:/workspace" -w /workspace bufbuild/buf:1.47.2
 
-.PHONY: help up down ps logs seed sim e2e test test-int samples proto-gen proto-lint proto-breaking
+.PHONY: help up down ps logs seed sim e2e test test-int samples dispatch-backtest proto-gen proto-lint proto-breaking
 
 help: ## list targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-16s %s\n", $$1, $$2}'
@@ -52,14 +52,19 @@ test: ## unit tests with coverage (Go modules + Python services)
 	cd services/ingest-gateway && go test -timeout 5m -cover ./...
 	cd services/stream-processor && go test -timeout 5m -cover ./...
 	cd services/battery-intel && uv run pytest -q --cov=app/domain --cov=app/application --cov-fail-under=80
+	cd services/dispatch-optimizer && uv run pytest -q --cov=app/domain --cov=app/application --cov-fail-under=80
 
 test-int: ## integration tests against the local stack (make up first)
 	cd services/simulator && go test -tags integration -count=1 ./...
 	cd services/ingest-gateway && go test -tags integration -count=1 ./...
 	cd services/battery-intel && uv run pytest -q -m integration
+	cd services/dispatch-optimizer && uv run pytest -q -m integration
 
 samples: ## regenerate libs/oem-samples golden files from the encoders
 	cd services/simulator && go test ./internal/adapters/encoders -run TestGoldenFiles -update
+
+dispatch-backtest: ## depot planner vs charge-on-arrival on seed depots (DEPOTS=5 DAYS=30 OUT=<file outside OneDrive>)
+	cd services/dispatch-optimizer && uv run python -m bench.backtest --depots $(or $(DEPOTS),5) --days $(or $(DAYS),30) > $(or $(OUT),backtest.json)
 
 proto-gen: ## regenerate Go code from libs/proto (commit the result)
 	$(BUF) generate

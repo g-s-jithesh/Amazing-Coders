@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [battery-intel]
+        service: [battery-intel, dispatch-optimizer]
     defaults:
       run:
         working-directory: services/${{ matrix.service }}
@@ -64,7 +64,7 @@ jobs:
       - name: ruff
         run: uv run ruff check . && uv run ruff format --check .
       - name: mypy --strict
-        run: uv run mypy app tests
+        run: uv run mypy app tests $(test -d bench && echo bench)
       - name: test (coverage gate 80 % on domain + application)
         run: uv run pytest --cov=app/domain --cov=app/application --cov-report=term --cov-report=xml --cov-fail-under=80
       - uses: actions/upload-artifact@v4
@@ -90,7 +90,7 @@ jobs:
     needs: [go, python]
     strategy:
       matrix:
-        service: [ingest-gateway, stream-processor, battery-intel]
+        service: [ingest-gateway, stream-processor, battery-intel, dispatch-optimizer]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3

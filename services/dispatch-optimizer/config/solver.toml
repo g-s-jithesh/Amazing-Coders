@@ -1,0 +1,8 @@
+# Depot planner settings. Iteration defaults are from bench/bench_depot.py (docs/evidence/dispatch/):
+# past the first few Lagrangian iterations the plan did not change, so patience stops early.
+budget_s = 2.0
+max_iter = 8
+patience = 3
+levels = 4            # power levels per vehicle incl. 0 (≤ 6)
+eta_ac = 0.92         # charger-to-pack efficiency, AC (assumption)
+horizon_slots = 96    # 24 h of 15-min slots

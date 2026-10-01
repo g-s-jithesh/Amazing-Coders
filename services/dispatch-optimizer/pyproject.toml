@@ -1,0 +1,57 @@
+[project]
+name = "dispatch-optimizer"
+version = "0.1.0"
+description = "Charging dispatch optimiser: depot DP + Lagrangian site cap, en-route A* (Project Kilowatt)"
+requires-python = ">=3.12"
+dependencies = [
+    "confluent-kafka>=2.15.1",
+    "fastapi>=0.142.2",
+    "kilowatt-proto>=0.1.0",
+    "numpy>=2.5.3",
+    "prometheus-client>=0.26.0",
+    "psycopg[binary]>=3.3.6",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.uv.sources]
+kilowatt-proto = { path = "../../libs/proto/gen/python" }
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "hypothesis>=6.168.3",
+    "mypy>=2.3.1",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.9",
+    "types-protobuf>=7.35.1.20260906",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "BLE", "RUF"]
+ignore = ["S101", "RUF001", "RUF002", "RUF003"]  # asserts in tests; unicode (° √ ·) in docs is intentional
+per-file-ignores = { "tests/*" = ["S311"], "bench/*" = ["S311"] }
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+mypy_path = "../../libs/proto/gen/python"
+namespace_packages = true
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = ["confluent_kafka.*", "prometheus_client.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["kilowatt.*"]  # generated protobuf stubs
+ignore_errors = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs the local stack (make up)"]
+addopts = "-m 'not integration'"

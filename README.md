@@ -3,7 +3,7 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: simulator (F-01), ingest-gateway (F-02/F-03), stream-processor (F-05, F-04 data side) and battery-intel (F-07 SoH, F-06 DTC decode) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> Status: simulator (F-01), ingest-gateway (F-02/F-03), stream-processor (F-05, F-04 data side) and battery-intel (F-07 SoH, F-06 DTC decode) and dispatch-optimizer (F-08 depot planner) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
 
 ## Quick start
 
@@ -11,12 +11,13 @@ Requires Docker, GNU Make, Go 1.24+, and [uv](https://docs.astral.sh/uv/) for th
 
 ```bash
 cp .env.example .env   # dev-only values
-make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ScyllaDB, ingest-gateway, stream-processor, battery-intel (API + session worker)
+make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ScyllaDB, ingest-gateway, stream-processor, battery-intel (API + session worker), dispatch-optimizer (API + outbox relay)
 make seed              # 100K vehicles of synthetic master data → Postgres + vehicle registry topic (SEED=42 VEHICLES=100000 TENANTS=3)
 make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in real time; Ctrl-C to stop
 make test              # unit tests
 make test-int          # integration tests against the running stack
 make e2e OUT=<dir>     # full pipeline run with a demo fault: alert latency, lag, sink timings (write OUT outside OneDrive)
+make dispatch-backtest OUT=<file>  # depot planner vs charge-on-arrival, 5 seed depots × 30 days
 make down              # stop + wipe volumes
 ```
 
@@ -50,6 +51,7 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | ScyllaDB (CQL) | `localhost:9042` |
 | battery-intel API: `/internal/v1/vehicles/{vin}/soh` (header `X-Tenant-Id`), `/internal/v1/dtc/{code}`, `/docs` | `localhost:8001` |
 | battery-intel session worker `/metrics` | `localhost:9104` |
+| dispatch-optimizer API: `POST /internal/v1/depots/{id}/dispatch-plans`, `GET /internal/v1/dispatch-plans/{id}`, `POST …/approve` (headers `X-Tenant-Id`, `X-User-Id`, `X-Roles`) | `localhost:8002` |
 
 Watch alerts live: `cd services/stream-processor && go run ./cmd/alerts-tail --vin <VIN>`.
 

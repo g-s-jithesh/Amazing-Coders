@@ -189,6 +189,55 @@ services:
       battery-migrate: { condition: service_completed_successfully }
       kafka-init: { condition: service_completed_successfully }
 
+  dispatch-migrate:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-kilowatt}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-kilowatt-dev-only}
+      PGDATABASE: ${POSTGRES_DB:-kilowatt}
+    # Apply the schema as the owner, then (re)load the reference tariffs.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        psql -v ON_ERROR_STOP=1 -q -f /migrations/0001_dispatch_core.sql &&
+        psql -v ON_ERROR_STOP=1 -q -1 -c 'TRUNCATE dispatch.tariff_window' -c "\copy dispatch.tariff_window FROM '/ref/tariffs.csv' CSV HEADER"
+    volumes:
+      - ../../services/dispatch-optimizer/migrations:/migrations:ro
+      - ../../data/reference/tariffs.csv:/ref/tariffs.csv:ro
+    restart: "no"
+
+  dispatch-optimizer:
+    build:
+      context: ../..
+      dockerfile: services/dispatch-optimizer/Dockerfile
+    ports: ["127.0.0.1:8002:8002"] # loopback only: caller identity comes from headers until F-10 (JWT)
+    environment:
+      DATABASE_URL: postgresql://dispatch_app:dispatch-app-dev-only@postgres:5432/${POSTGRES_DB:-kilowatt}
+      SEED_DIR: /srv/data/seed # dev fleet source until fleet-api serves depot snapshots (Step 8)
+    volumes:
+      - ../../data/seed:/srv/data/seed:ro
+    depends_on:
+      dispatch-migrate: { condition: service_completed_successfully }
+
+  dispatch-relay:
+    build:
+      context: ../..
+      dockerfile: services/dispatch-optimizer/Dockerfile
+    command: ["python", "-m", "app.workers.outbox_relay"]
+    restart: unless-stopped
+    environment:
+      RELAY_DATABASE_URL: postgresql://dispatch_relay:dispatch-relay-dev-only@postgres:5432/${POSTGRES_DB:-kilowatt}
+      KAFKA_BOOTSTRAP: kafka:29092
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+    depends_on:
+      dispatch-migrate: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+
   redis:
     image: redis:8.0
     ports: ["6379:6379"]
