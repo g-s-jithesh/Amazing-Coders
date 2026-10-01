@@ -68,6 +68,8 @@ Watch alerts live: `cd services/stream-processor && go run ./cmd/alerts-tail --v
 
 ## Console and demo
 
+**Demo video (about 5 min):** https://drive.google.com/file/d/15A3AiAy_CPrZ7cfc7xiuHUurIiqqgJeO/view?usp=sharing
+
 Open `web/index.html` (no build step). Tenant selector, then: battery health (distribution + lowest SoH packs), HIGH/CRITICAL
 alerts with gateway-to-alert latency, vehicle SoH with 95 % interval and DTC decode, and the depot planner (generate DRAFT,
 compare with charge-on-arrival, load curve vs cap, approve). Demo flow with timings: [`docs/demo-script.md`](docs/demo-script.md).

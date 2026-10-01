@@ -640,4 +640,4 @@ Replace the targets with measured values from `docs/evidence/`. Never ship a tar
 
 - Team name: `Amazing Coders`
 - Members & roles: `[name — role — email]`
-- Repository URL: https://github.com/g-s-jithesh/Amazing-Coders · CI URL / Demo video URL: `[ ]`
+- Repository URL: https://github.com/g-s-jithesh/Amazing-Coders · CI: https://github.com/g-s-jithesh/Amazing-Coders/actions · Demo video: https://drive.google.com/file/d/15A3AiAy_CPrZ7cfc7xiuHUurIiqqgJeO/view?usp=sharing
