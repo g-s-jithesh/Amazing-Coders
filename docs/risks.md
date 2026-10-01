@@ -40,3 +40,5 @@ that this submission does **not** deliver. Nothing here is claimed anywhere else
 | Worker hang on coordinator loss | Synchronous commit blocked forever under laptop load | Offsets stored per record, committed in the background |
 | Relay blocked by RLS | `UPDATE` re-checks the SELECT policy | Policy fixed; duplicate publish tolerated by `plan_id` dedupe |
 | Laptop memory | Docker could take 14.5 GB | WSL capped at 5 GB, per-container limits in compose |
+
+ER diagram: `docs/er/README.md` (as built). Not captured: EXPLAIN ANALYZE before/after for the top three queries, `docs/capacity.md` measurements.

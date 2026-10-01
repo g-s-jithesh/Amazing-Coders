@@ -10,7 +10,7 @@ Sections point to the source of truth; numbers live in `docs/evidence/` and nowh
 3. **Solution, value, innovation.** (1) Health-aware charging cost (energy + degradation in the objective, F-16);
    (2) fault precursors made learnable by the simulator (F-15); (3) approval-gated dispatch with a transactional outbox.
 4. **Features.** `docs/feature-matrix.md`.
-5. **High-level design.** `docs/architecture/c4-containers.md`; ADR-0001..0006 in `docs/adr/`; data stores per ADR-0002.
+5. **High-level design.** `docs/architecture/c4-containers.md`; ER diagram and denormalisation notes `docs/er/README.md`; ADR-0001..0006 in `docs/adr/`; data stores per ADR-0002.
 6. **Low-level design.** Layering per service `CLAUDE.md`; algorithms: VIN/DTC parsing, Bloom + Redis dedup, event-time windows and
    EWMA rules (stream-processor), coulomb counting + local-linear-trend Kalman + sqrt(t) RUL (battery-intel), batched DP over
    (slot, SoC) + Lagrangian coupling + repair + greedy safety net (dispatch-optimizer). Patterns in code: Adapter, Strategy,
