@@ -639,5 +639,5 @@ Replace the targets with measured values from `docs/evidence/`. Never ship a tar
 ### Team placeholders (fill in)
 
 - Team name: `Amazing Coders`
-- Members & roles: `[name — role — email]`
+- Members & roles: `G.S.Jithesh - Coder, ML analyst and code reviewer - jg1140@srmist.edu.in`
 - Repository URL: https://github.com/g-s-jithesh/Amazing-Coders · CI: https://github.com/g-s-jithesh/Amazing-Coders/actions · Demo video: https://drive.google.com/file/d/15A3AiAy_CPrZ7cfc7xiuHUurIiqqgJeO/view?usp=sharing
