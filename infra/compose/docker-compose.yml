@@ -4,6 +4,7 @@ name: kilowatt
 
 services:
   kafka:
+    mem_limit: 1536m
     image: apache/kafka:3.9.0
     ports: ["9092:9092"]
     environment:
@@ -48,6 +49,7 @@ services:
     restart: "no"
 
   postgres:
+    mem_limit: 512m
     image: pgvector/pgvector:pg16
     ports: ["5432:5432"]
     environment:
@@ -65,6 +67,7 @@ services:
       retries: 20
 
   mosquitto:
+    mem_limit: 256m
     image: eclipse-mosquitto:2.0.20
     ports: ["1883:1883"]
     volumes:
@@ -76,6 +79,7 @@ services:
       retries: 20
 
   ingest-gateway:
+    mem_limit: 256m
     build:
       context: ../..
       dockerfile: services/ingest-gateway/Dockerfile
@@ -96,6 +100,7 @@ services:
   # Two roles of one image, each with its own consumer group (see services/stream-processor/CLAUDE.md):
   # processor = rules, alerts, sessions, rollups, state, live map; raw-sink = Scylla telemetry_raw.
   stream-processor:
+    mem_limit: 1g
     build:
       context: ../..
       dockerfile: services/stream-processor/Dockerfile
@@ -109,6 +114,7 @@ services:
       redis: { condition: service_healthy }
 
   stream-processor-raw:
+    mem_limit: 256m
     build:
       context: ../..
       dockerfile: services/stream-processor/Dockerfile
@@ -122,6 +128,7 @@ services:
       scylla-init: { condition: service_completed_successfully }
 
   scylla:
+    mem_limit: 1536m
     image: scylladb/scylla:6.2
     command: --smp 2 --memory 2G --overprovisioned 1 --developer-mode 1 --api-address 0.0.0.0
     ports: ["9042:9042"]
@@ -164,16 +171,19 @@ services:
     restart: "no"
 
   battery-intel:
+    mem_limit: 256m
     build:
       context: ../..
       dockerfile: services/battery-intel/Dockerfile
     ports: ["127.0.0.1:8001:8001"] # loopback only: tenant comes from X-Tenant-Id until F-10 (JWT)
     environment:
       DATABASE_URL: postgresql://battery_app:battery-app-dev-only@postgres:5432/${POSTGRES_DB:-kilowatt}
+      KAFKA_BOOTSTRAP: kafka:29092 # recent-alerts endpoint reads alerts.v1
     depends_on:
       battery-migrate: { condition: service_completed_successfully }
 
   battery-worker:
+    mem_limit: 256m
     build:
       context: ../..
       dockerfile: services/battery-intel/Dockerfile
@@ -211,6 +221,7 @@ services:
     restart: "no"
 
   dispatch-optimizer:
+    mem_limit: 512m
     build:
       context: ../..
       dockerfile: services/dispatch-optimizer/Dockerfile
@@ -224,6 +235,7 @@ services:
       dispatch-migrate: { condition: service_completed_successfully }
 
   dispatch-relay:
+    mem_limit: 128m
     build:
       context: ../..
       dockerfile: services/dispatch-optimizer/Dockerfile
@@ -239,6 +251,7 @@ services:
       kafka-init: { condition: service_completed_successfully }
 
   redis:
+    mem_limit: 512m
     image: redis:8.0
     ports: ["6379:6379"]
     healthcheck:

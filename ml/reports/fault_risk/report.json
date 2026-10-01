@@ -1,0 +1,75 @@
+{
+ "kind": "fault_risk_7d",
+ "protocol": "grouped by vehicle; train days <= 12, test days >= 15; label = first DTC within 7 days, already-faulted samples dropped",
+ "n_vehicles": {
+  "train": 715,
+  "val": 239,
+  "test": 239
+ },
+ "n_train": 6300,
+ "n_test": 1010,
+ "test_positive_rate": 0.22871287128712872,
+ "params": {
+  "num_leaves": 16,
+  "learning_rate": 0.03
+ },
+ "val_pr_auc": 0.5396741872537951,
+ "results": {
+  "model": {
+   "pr_auc": 0.5686936453095169,
+   "operating_point_p>=0.5": {
+    "threshold": 0.3029063819021242,
+    "precision": 0.5,
+    "recall": 0.4329004329004329
+   },
+   "median_lead_time_h": 39.04166666666667,
+   "flags_per_1000_vehicle_days": 198.01980198019803
+  },
+  "baseline_threshold_rules": {
+   "pr_auc": 0.358930178732159,
+   "operating_point_p>=0.5": {
+    "threshold": 1.0,
+    "precision": 1.0,
+    "recall": 0.16883116883116883
+   },
+   "median_lead_time_h": 22.25,
+   "flags_per_1000_vehicle_days": 38.613861386138616
+  }
+ },
+ "pr_auc_random_baseline": 0.22871287128712872,
+ "targets": {
+  "recall_at_precision_0.5": 0.7,
+  "lead_time_h": 48
+ },
+ "feature_gain": {
+  "iso_slope_per_h": 15700.3,
+  "imb_slope_per_h": 10185.4,
+  "td_mean_24h": 8573.4,
+  "iso_min": 5926.2,
+  "imb_max": 3254.8,
+  "imb_mean": 3173.1,
+  "td_max": 3078.6,
+  "aux_min": 2891.3,
+  "soc_mean": 2646.2,
+  "td_slope_per_h": 2149.5,
+  "imb_mean_24h": 2012.6,
+  "aux_mean": 1875.0,
+  "td_mean": 1631.7,
+  "soc_gt80_frac": 1165.5,
+  "hvil_false_frac": 900.3,
+  "iso_mean": 638.6,
+  "iso_min_24h": 0.0,
+  "hvil_flaps": 0.0
+ },
+ "artefact": {
+  "path": "fault_risk_lgbm.txt",
+  "sha256": "06bbfec67d039dcb60c92e966a2db44f66b0bef3bfbc688ecd25d24d31e75535"
+ },
+ "env": {
+  "python": "3.14.0",
+  "lightgbm": "4.7.0",
+  "machine": "AMD64",
+  "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+  "at": "2026-10-01T04:00:32+00:00"
+ }
+}

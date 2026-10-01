@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kilowatt Console</title>
+<!-- Single-file ops console (no build step). Talks to battery-intel (:8001) and dispatch-optimizer (:8002).
+     Dev identity headers until Keycloak/JWT (F-10); see web/CLAUDE.md. All data is synthetic. -->
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1b1f24; --mute:#667085; --line:#e4e7ec; --acc:#0b6bcb; --ok:#127a3d; --warn:#b54708; --bad:#b42318; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1318; --card:#171c23; --ink:#e8ecf1; --mute:#98a2b3; --line:#2a313b; --acc:#5aa9ff; --ok:#4cc38a; --warn:#f0a35e; --bad:#f97066; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:14px/1.45 system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { padding:12px 16px; border-bottom:1px solid var(--line); background:var(--card); display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; }
+  header h1 { font-size:16px; margin:0 8px 0 0; }
+  header label { color:var(--mute); font-size:12px; display:flex; gap:6px; align-items:center; }
+  input, select, button { font:inherit; padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--ink); }
+  button { cursor:pointer; background:var(--acc); color:#fff; border-color:var(--acc); }
+  button.secondary { background:var(--card); color:var(--ink); border-color:var(--line); }
+  button:disabled { opacity:.5; cursor:default; }
+  main { display:grid; gap:12px; padding:12px; grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr)); max-width:1400px; margin:0 auto; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; min-width:0; }
+  section h2 { font-size:14px; margin:0 0 8px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--mute); font-weight:500; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .mute { color:var(--mute); } .ok { color:var(--ok); } .warn { color:var(--warn); } .bad { color:var(--bad); }
+  .row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:6px 0; }
+  .kpi { display:flex; flex-wrap:wrap; gap:6px 18px; margin:6px 0; } .kpi b { font-size:18px; display:block; }
+  .bars { display:flex; align-items:flex-end; gap:4px; height:90px; margin:8px 0 2px; }
+  .bars div { flex:1; background:var(--acc); border-radius:3px 3px 0 0; min-height:2px; position:relative; }
+  .bars span { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:10px; color:var(--mute); }
+  .sev-CRITICAL { color:var(--bad); font-weight:600; } .sev-HIGH { color:var(--warn); font-weight:600; }
+  a.vin { color:var(--acc); cursor:pointer; text-decoration:underline; }
+  pre { margin:6px 0 0; font-size:12px; white-space:pre-wrap; word-break:break-word; }
+  .err { color:var(--bad); margin:4px 0; } svg { width:100%; height:110px; display:block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kilowatt Console</h1>
+  <label>Tenant <select id="tenant">
+    <option value="afb6505e-4a51-4af5-a218-5b9a5888b6ef">Synthetic Logistics A</option>
+    <option value="d18d5583-6544-4752-94fd-b1c33889be3a">Synthetic Logistics B</option>
+    <option value="1b16bc5d-7528-44af-8102-4d1c006ddc91">Synthetic Logistics C</option></select></label>
+  <label>User <input id="user" value="demo-dispatcher" size="14"></label>
+  <label>Role <select id="roles"><option>dispatcher</option><option>fleet_admin</option><option>analyst</option></select></label>
+  <label>battery-intel <input id="bi" value="http://localhost:8001" size="20"></label>
+  <label>dispatch <input id="dp" value="http://localhost:8002" size="20"></label>
+  <span class="mute">synthetic data only</span>
+</header>
+<main>
+  <section id="health"><h2>Battery health (latest SoH per pack)</h2><div id="health-body" class="mute">loading…</div></section>
+  <section id="alerts"><h2>Real-time alerts <span class="mute" id="alerts-age"></span></h2><div id="alerts-body" class="mute">loading…</div></section>
+  <section id="vehicle"><h2>Vehicle &amp; DTC</h2>
+    <div class="row"><input id="vin" placeholder="VIN (click one in the table)" size="22"><button id="vin-go" class="secondary">SoH</button>
+      <input id="dtc" placeholder="DTC e.g. P0A7E" size="12"><button id="dtc-go" class="secondary">Decode</button></div>
+    <div id="vehicle-body" class="mute">Pick a VIN from the health table or type a DTC.</div></section>
+  <section id="plan"><h2>Charging dispatch planner</h2>
+    <div class="row"><select id="depot"></select><button id="plan-go">Generate plan</button><button id="approve" disabled>Approve</button></div>
+    <div id="plan-body" class="mute">Generates a DRAFT for the next 36 h. Only a dispatcher can approve.</div></section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const cfg = () => ({ t: $("tenant").value, u: $("user").value, r: $("roles").value, bi: $("bi").value, dp: $("dp").value });
+const hdr = () => ({ "X-Tenant-Id": cfg().t, "X-User-Id": cfg().u, "X-Roles": cfg().r });
+const rupees = (paise) => "₹" + (paise / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, { ...opts, headers: { ...hdr(), ...(opts.headers || {}) } });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`${res.status} ${body.title || ""} ${body.detail || ""}`.trim());
+  return body;
+}
+
+async function loadHealth() {
+  const el = $("health-body");
+  try {
+    const d = await api(cfg().bi + "/internal/v1/fleet/soh-summary");
+    const max = Math.max(1, ...d.histogram_5pp.map((b) => b.packs));
+    const bars = d.histogram_5pp.map((b) => `<div style="height:${(100 * b.packs) / max}%" title="${b.packs} packs"><span>${b.from_pct}</span></div>`).join("");
+    const rows = d.lowest.map((r) => `<tr><td><a class="vin" data-vin="${esc(r.vin)}">${esc(r.vin)}</a></td><td class="num">${r.soh_pct.toFixed(1)}</td><td class="num mute">${r.ci_low.toFixed(1)}–${r.ci_high.toFixed(1)}</td></tr>`).join("");
+    el.className = "";
+    el.innerHTML = `<div class="kpi"><div><b>${d.packs}</b><span class="mute">packs estimated</span></div><div><b>${d.mean_soh_pct ?? "–"}%</b><span class="mute">mean SoH</span></div></div>
+      <div class="mute">SoH distribution (5-pp buckets, % from)</div><div class="bars">${bars}</div><div style="height:16px"></div>
+      <table><tr><th>Lowest SoH (needs attention)</th><th class="num">SoH %</th><th class="num">95 % CI</th></tr>${rows}</table>`;
+    el.querySelectorAll("a.vin").forEach((a) => (a.onclick = () => { $("vin").value = a.dataset.vin; loadVehicle(); }));
+  } catch (e) { el.className = "err"; el.textContent = e.message; }
+}
+
+async function loadAlerts() {
+  const el = $("alerts-body");
+  try {
+    const d = await api(cfg().bi + "/internal/v1/alerts/recent?limit=15&min_severity=HIGH");
+    el.className = "";
+    el.innerHTML = d.alerts.length
+      ? `<table><tr><th>Time</th><th>Severity</th><th>Rule</th><th>VIN</th><th class="num">Latency</th></tr>${d.alerts.map((a) => `<tr><td>${new Date(a.ts_event_ms).toLocaleTimeString()}</td><td class="sev-${a.severity}">${a.severity}${a.state === "RESOLVED" ? " ✓" : ""}</td><td>${esc(a.rule_id)} ${esc(a.detail)}</td><td><a class="vin" data-vin="${esc(a.vin)}">${esc(a.vin)}</a></td><td class="num mute">${a.latency_ms == null ? "–" : a.latency_ms + " ms"}</td></tr>`).join("")}</table>`
+      : '<span class="mute">No HIGH/CRITICAL alerts for this tenant.</span>';
+    el.querySelectorAll("a.vin").forEach((a) => (a.onclick = () => { $("vin").value = a.dataset.vin; loadVehicle(); }));
+    $("alerts-age").textContent = "· updated " + new Date().toLocaleTimeString();
+  } catch (e) { el.className = "err"; el.textContent = e.message; }
+}
+
+async function loadVehicle() {
+  const vin = $("vin").value.trim(), el = $("vehicle-body");
+  if (!vin) return;
+  try {
+    const d = await api(`${cfg().bi}/internal/v1/vehicles/${encodeURIComponent(vin)}/soh`);
+    const pts = d.history.map((h) => [h.as_of_ms, h.soh_pct]);
+    const l = d.latest, rul = d.rul ? `${Math.round(d.rul.days)} days to 80 % (fit of SoH vs √t)` : "not enough history for a remaining-life estimate";
+    el.className = "";
+    el.innerHTML = `<div class="kpi"><div><b>${l.soh_pct.toFixed(1)}%</b><span class="mute">SoH (95 % CI ${l.ci_low.toFixed(1)}–${l.ci_high.toFixed(1)})</span></div><div><b>${d.history.length}</b><span class="mute">sessions</span></div></div>
+      <div class="mute">Method ${esc(d.method)} · ${esc(rul)}</div>${spark(pts)}`;
+  } catch (e) { el.className = "err"; el.textContent = e.message; }
+}
+
+function spark(pts) {
+  if (pts.length < 2) return "";
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys) - 1, y1 = Math.max(...ys) + 1;
+  const p = pts.map(([x, y]) => `${(300 * (x - x0)) / (x1 - x0 || 1)},${100 - (100 * (y - y0)) / (y1 - y0 || 1)}`).join(" ");
+  return `<svg viewBox="0 0 300 100" preserveAspectRatio="none"><polyline points="${p}" fill="none" stroke="var(--acc)" stroke-width="2" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+async function decode() {
+  const code = $("dtc").value.trim().toUpperCase(), el = $("vehicle-body");
+  if (!code) return;
+  try {
+    const d = await api(`${cfg().bi}/internal/v1/dtc/${encodeURIComponent(code)}`);
+    el.className = "";
+    el.innerHTML = `<div><b>${esc(d.code)}</b> <span class="sev-${esc(d.severity || "")}">${esc(d.severity || "uncatalogued")}</span></div>
+      <div>${esc(d.description || "Not in the catalogue")}</div>
+      <div class="mute">System: ${esc(d.system)} · defined by: ${esc(d.defined_by)} · runbook: ${esc(d.runbook_id || "–")} · source: ${esc(d.source_status || "–")}</div>`;
+  } catch (e) { el.className = "err"; el.textContent = e.message; }
+}
+
+async function loadDepots() {
+  try {
+    const d = await api(cfg().dp + "/internal/v1/depots");
+    $("depot").innerHTML = d.depots.map((x) => `<option value="${x.depot_id}">${x.vehicles} vehicles · ${x.connectors} connectors · ${Math.round(x.site_cap_kw)} kW cap · ${x.depot_id.slice(0, 8)}</option>`).join("");
+  } catch (e) { $("plan-body").className = "err"; $("plan-body").textContent = e.message; }
+}
+
+let currentPlan = null;
+function loadChart(plan) {
+  const slots = plan.horizon_slots, load = new Array(slots).fill(0);
+  for (const a of plan.assignments) {
+    const s = Math.round((a.start_ms - plan.horizon_start_ms) / 900000), e = Math.round((a.end_ms - plan.horizon_start_ms) / 900000);
+    for (let i = s; i < e && i < slots; i++) load[i] += a.power_kw;
+  }
+  const max = Math.max(1, ...load, plan.solver_stats.site_cap_kw || 0), w = 300 / slots;
+  const cap = plan.solver_stats.site_cap_kw ? `<line x1="0" x2="300" y1="${100 - (100 * plan.solver_stats.site_cap_kw) / max}" y2="${100 - (100 * plan.solver_stats.site_cap_kw) / max}" stroke="var(--bad)" stroke-dasharray="4"/>` : "";
+  return `<div class="mute">Depot load (kW) over 36 h; dashed = site cap</div><svg viewBox="0 0 300 100" preserveAspectRatio="none">${load.map((v, i) => `<rect x="${i * w}" y="${100 - (100 * v) / max}" width="${w * 0.9}" height="${(100 * v) / max}" fill="var(--acc)"/>`).join("")}${cap}</svg>`;
+}
+
+async function generatePlan() {
+  const el = $("plan-body"); $("approve").disabled = true; el.className = "mute"; el.textContent = "solving…";
+  try {
+    const p = await api(`${cfg().dp}/internal/v1/depots/${$("depot").value}/dispatch-plans`, { method: "POST", headers: { "Idempotency-Key": crypto.randomUUID() } });
+    currentPlan = p; renderPlan(p);
+  } catch (e) { el.className = "err"; el.textContent = e.message; }
+}
+
+function renderPlan(p) {
+  const el = $("plan-body"), saving = p.baseline_cost_paise - p.cost_paise;
+  el.className = "";
+  el.innerHTML = `<div class="kpi"><div><b>${rupees(p.cost_paise)}</b><span class="mute">plan (energy ${rupees(p.energy_cost_paise)} + battery wear ${rupees(p.degradation_cost_paise)})</span></div>
+    <div><b>${rupees(p.baseline_cost_paise)}</b><span class="mute">charge-on-arrival</span></div>
+    <div><b class="${p.missed_departures ? "bad" : "ok"}">${p.missed_departures}</b><span class="mute">missed departures</span></div></div>
+    <div class="mute">Status <b>${p.status}</b> · v${p.version} · ${esc(p.method)}${p.method === "GREEDY_FALLBACK" ? " (fallback)" : ""} · ${p.assignments ? p.assignments.length : "?"} charge slots · peak ${p.solver_stats.peak_kw} kW of ${Math.round(p.solver_stats.site_cap_kw)} kW cap · single-horizon saving ${rupees(saving)} (see back-test evidence for the fair comparison)</div>
+    ${p.assignments ? loadChart(p) : ""}`;
+  $("approve").disabled = p.status !== "DRAFT";
+}
+
+async function approve() {
+  if (!currentPlan) return;
+  try {
+    const r = await api(`${cfg().dp}/internal/v1/dispatch-plans/${currentPlan.id}/approve`, { method: "POST" });
+    currentPlan = { ...currentPlan, status: r.status, approved_by: r.approved_by }; renderPlan(currentPlan);
+    $("plan-body").insertAdjacentHTML("beforeend", `<div class="ok">Approved by ${esc(r.approved_by)}; published to dispatch.commands.v1 by the outbox relay.</div>`);
+  } catch (e) { $("plan-body").insertAdjacentHTML("beforeend", `<div class="err">${esc(e.message)}</div>`); }
+}
+
+$("vin-go").onclick = loadVehicle; $("dtc-go").onclick = decode; $("plan-go").onclick = generatePlan; $("approve").onclick = approve;
+for (const id of ["tenant", "user", "roles", "bi", "dp"]) $(id).onchange = () => { loadHealth(); loadAlerts(); loadDepots(); };
+loadHealth(); loadAlerts(); loadDepots(); setInterval(loadAlerts, 5000);
+</script>
+</body>
+</html>

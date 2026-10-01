@@ -110,6 +110,18 @@ class SeedFleet:
         self._depots = {d.depot_id: d for d in load_depots(seed)}
         self._soc = soc_pct
 
+    def list_depots(self, tenant_id: str) -> list[dict[str, object]]:
+        return [
+            {
+                "depot_id": d.depot_id,
+                "vehicles": len(d.vehicles),
+                "connectors": d.connectors,
+                "site_cap_kw": d.site_cap_kw,
+            }
+            for d in self._depots.values()
+            if d.tenant_id == tenant_id
+        ]
+
     def depot_state(self, tenant_id: str, depot_id: str, now_ms: int) -> DepotState | None:
         d = self._depots.get(depot_id)
         if d is None or d.tenant_id != tenant_id:

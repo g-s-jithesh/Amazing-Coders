@@ -118,3 +118,11 @@ def test_transition_rules() -> None:
 def test_health() -> None:
     c = client(MemStore())
     assert c.get("/healthz").text == "ok" and c.get("/readyz").status_code == 200
+
+
+def test_depot_list_and_cors() -> None:
+    c = client(MemStore())
+    assert c.get("/internal/v1/depots").status_code == 401
+    assert c.get("/internal/v1/depots", headers=DISPATCHER).json() == {"depots": []}  # the fake fleet lists none
+    pre = {"Origin": "null", "Access-Control-Request-Method": "POST", "Access-Control-Request-Headers": "x-tenant-id"}
+    assert c.options(f"/internal/v1/depots/{DEPOT}/dispatch-plans", headers=pre).status_code == 200

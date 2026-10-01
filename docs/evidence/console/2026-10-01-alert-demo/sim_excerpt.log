@@ -1,0 +1,2 @@
+2026/10/01 09:52:41 INFO demo fault injected vin=0KACV21L0PB000002 fault=insulation_wear dtc_at=2026-10-01T20:10:00.000Z
+2026/10/01 09:52:41 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.01 speedup=30 noise=realistic start=2026-10-01T20:00:00.000Z target_eps=30000

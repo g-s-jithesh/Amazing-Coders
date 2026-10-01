@@ -3,11 +3,21 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: simulator (F-01), ingest-gateway (F-02/F-03), stream-processor (F-05, F-04 data side) and battery-intel (F-07 SoH, F-06 DTC decode) and dispatch-optimizer (F-08 depot planner) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> **Status (submission):** a working vertical slice of the problem statement. Built and running end to end: a 100K-vehicle
+> simulator (3 OEM formats, noise, injected faults), multi-OEM ingest, real-time battery safety alerts, SoH estimation
+> with confidence intervals, DTC decoding, a health-aware depot charging optimiser with an approval workflow, trained
+> ML models for SoH and 7-day fault risk, and a one-page console. **Not built:** public API/auth, live map, batch layer,
+> dashboards, copilot, en-route dispatch, Helm/Terraform, cluster load test. Read [`docs/risks.md`](docs/risks.md) first;
+> feature-by-feature status is in [`docs/feature-matrix.md`](docs/feature-matrix.md).
 
 ## Quick start
 
 Requires Docker, GNU Make, Go 1.24+, and [uv](https://docs.astral.sh/uv/) for the Python services' tests.
+
+**Memory:** the stack needs about 3 GB. On a 16 GB machine cap Docker's WSL2 VM in `%USERPROFILE%\.wslconfig`
+(`[wsl2] memory=5GB`, then `wsl --shutdown`); compose also sets a limit per container. ScyllaDB and the raw sink are only
+needed for raw-telemetry storage: `docker compose -f infra/compose/docker-compose.yml up -d kafka postgres redis mosquitto
+ingest-gateway stream-processor battery-intel battery-worker dispatch-optimizer dispatch-relay` runs everything else.
 
 ```bash
 cp .env.example .env   # dev-only values
@@ -17,6 +27,7 @@ make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in re
 make test              # unit tests
 make test-int          # integration tests against the running stack
 make e2e OUT=<dir>     # full pipeline run with a demo fault: alert latency, lag, sink timings (write OUT outside OneDrive)
+# console: open web/index.html in a browser (talks to :8001 and :8002; dev identity headers, synthetic data)
 make dispatch-backtest OUT=<file>  # depot planner vs charge-on-arrival, 5 seed depots × 30 days
 make down              # stop + wipe volumes
 ```
@@ -54,6 +65,21 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | dispatch-optimizer API: `POST /internal/v1/depots/{id}/dispatch-plans`, `GET /internal/v1/dispatch-plans/{id}`, `POST …/approve` (headers `X-Tenant-Id`, `X-User-Id`, `X-Roles`) | `localhost:8002` |
 
 Watch alerts live: `cd services/stream-processor && go run ./cmd/alerts-tail --vin <VIN>`.
+
+## Console and demo
+
+Open `web/index.html` (no build step). Tenant selector, then: battery health (distribution + lowest SoH packs), HIGH/CRITICAL
+alerts with gateway-to-alert latency, vehicle SoH with 95 % interval and DTC decode, and the depot planner (generate DRAFT,
+compare with charge-on-arrival, load curve vs cap, approve). Demo flow with timings: [`docs/demo-script.md`](docs/demo-script.md).
+Inject a fault for the alert: `make sim RATE_HZ=0.01 SPEEDUP=30 DT=10 START=<after the last run's event time, UTC> DURATION=25m
+INJECT=<vin>:cooling_degradation PRECURSOR=10m` (the stream-processor drops events older than its per-vehicle watermark,
+so `make down` first if you want to start from the beginning).
+
+## ML (F-14 SoH, F-15 7-day fault risk)
+
+`ml/` builds datasets from simulator traces (`build_dataset.py`), trains LightGBM models and compares them with baselines
+(`train.py`), with leakage tests (`make`-free: `cd ml && uv run pytest`). Datasets are committed (synthetic, 1 MB).
+Train on Colab with `ml/train_colab.ipynb` (about a minute on CPU). Reports: `ml/reports/*/report.json`.
 
 ## Layout
 

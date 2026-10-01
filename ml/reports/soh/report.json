@@ -1,0 +1,99 @@
+{
+ "kind": "soh_regressor",
+ "protocol": "labels: 30 % of train vehicles with +-0.5 pp noise; evaluation: exact truth on all test vehicles",
+ "n_vehicles": {
+  "train": 720,
+  "val": 240,
+  "test": 240
+ },
+ "n_labelled_train": 216,
+ "n_eval": 240,
+ "params": {
+  "num_leaves": 4,
+  "learning_rate": 0.03
+ },
+ "val_mae_pp": 0.481368146993682,
+ "results": {
+  "model": {
+   "mae_pp": 0.39830565628764514,
+   "mae_ci95": [
+    0.3568241775252297,
+    0.44085135807159326
+   ],
+   "p90_abs_err_pp": 0.8870578046465339,
+   "p90_ci95": [
+    0.6988905915472883,
+    0.9778487391621709
+   ]
+  },
+  "baseline_linear_age": {
+   "mae_pp": 2.4042272002906153,
+   "mae_ci95": [
+    2.152270466949378,
+    2.6921438250717955
+   ],
+   "p90_abs_err_pp": 5.360114791965874,
+   "p90_ci95": [
+    4.7085206748250625,
+    6.118563391375746
+   ]
+  },
+  "baseline_raw_coulomb": {
+   "mae_pp": 0.2864025719179411,
+   "mae_ci95": [
+    0.25523055841537357,
+    0.3159069558775354
+   ],
+   "p90_abs_err_pp": 0.603358919422503,
+   "p90_ci95": [
+    0.5611691962795377,
+    0.663215653253519
+   ]
+  }
+ },
+ "per_vehicle_model": {
+  "CV21L": {
+   "n": 73,
+   "model_mae_pp": 0.23965389984964577,
+   "linear_age_mae_pp": 1.8629131721282899
+  },
+  "DV45N": {
+   "n": 72,
+   "model_mae_pp": 0.5092087430582874,
+   "linear_age_mae_pp": 3.3199544296254277
+  },
+  "LT70N": {
+   "n": 17,
+   "model_mae_pp": 0.6671165869496614,
+   "linear_age_mae_pp": 3.6324466167761917
+  },
+  "SD30L": {
+   "n": 78,
+   "model_mae_pp": 0.38582835053422754,
+   "linear_age_mae_pp": 1.7978660908481616
+  }
+ },
+ "feature_gain": {
+  "coulomb_soh": 81789.2,
+  "age_days": 1430.4,
+  "charge_kw_mean": 177.0,
+  "temp_mean": 108.2,
+  "efc_week": 100.2,
+  "soc_gt80_frac": 83.0,
+  "ambient_mean": 38.9,
+  "capacity_kwh": 11.4,
+  "model_cat": 0.0
+ },
+ "target_mae_pp": 2.0,
+ "artefact": {
+  "path": "soh_lgbm.txt",
+  "sha256": "21b9770fb37667dc1c80489c3a23a14b3189693280bdd34e8fd1edf39cc823ee"
+ },
+ "env": {
+  "python": "3.14.0",
+  "lightgbm": "4.7.0",
+  "machine": "AMD64",
+  "processor": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+  "at": "2026-10-01T04:00:32+00:00"
+ }
+}

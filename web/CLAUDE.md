@@ -1,5 +1,10 @@
 # web — CLAUDE.md
 
+> **As built (submission):** `web/index.html` only: one static file, no build, no framework, no map. It calls battery-intel (`:8001`)
+> and dispatch-optimizer (`:8002`) directly with dev identity headers (`X-Tenant-Id`, `X-User-Id`, `X-Roles`); both services allow any
+> CORS origin for this reason. Everything below is the plan for the full React console and is **not built**; JWT, a generated API
+> client, the live map and the other pages are future work (`docs/risks.md`).
+
 React + TypeScript (strict) + Vite. This is the ops console the judges will see first. It must be **clear, fast with 100K vehicles, and honest**: every number shown comes from the API with its method and timestamp. Pages and requirements are in root §10.
 
 ## Layout

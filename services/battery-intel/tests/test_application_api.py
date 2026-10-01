@@ -91,6 +91,10 @@ class FakeReader:
     async def history(self, tenant_id: str, vin: str, limit: int = 500) -> list[Estimate]:
         return [e for e in self.rows.get(vin, []) if e.tenant_id == tenant_id]  # what RLS does
 
+    async def summary(self, tenant_id: str, lowest: int = 20) -> dict[str, object]:
+        mine = [e for es in self.rows.values() for e in es if e.tenant_id == tenant_id]
+        return {"packs": len(mine), "mean_soh_pct": None, "histogram_5pp": [], "lowest": []}
+
     async def ping(self) -> None:
         return None
 
@@ -133,3 +137,29 @@ def test_dtc_endpoint_and_health() -> None:
 def test_report_without_history() -> None:
     rep = soh_report("V", [], 0)
     assert rep.latest is None and rep.rul is None
+
+
+def test_summary_and_alerts_are_tenant_scoped() -> None:
+    seen: list[tuple[str, int]] = []
+
+    def alerts(tenant: str, limit: int) -> list[dict[str, object]]:
+        seen.append((tenant, limit))
+        return [{"vin": "V", "rule_id": "DTC_RAISED"}] if tenant == T1 else []
+
+    c = TestClient(
+        create_app(
+            reader=FakeReader({"V": [est(1, 90.0)]}),
+            catalogue_path=str(CATALOGUE),
+            now_ms=lambda: DAY,
+            alerts_fn=alerts,
+        )
+    )
+    assert c.get("/internal/v1/fleet/soh-summary", headers={"X-Tenant-Id": T1}).json()["packs"] == 1
+    assert c.get("/internal/v1/fleet/soh-summary", headers={"X-Tenant-Id": T2}).json()["packs"] == 0
+    assert c.get("/internal/v1/fleet/soh-summary").status_code == 401
+    assert c.get("/internal/v1/alerts/recent?limit=999", headers={"X-Tenant-Id": T1}).json()["alerts"][0]["vin"] == "V"
+    assert seen == [(T1, 200)]  # limit clamped
+    assert c.get("/internal/v1/alerts/recent", headers={"X-Tenant-Id": T2}).json() == {"alerts": []}
+    assert c.get("/internal/v1/alerts/recent").status_code == 401
+    preflight = {"Origin": "null", "Access-Control-Request-Method": "GET"}
+    assert c.options("/internal/v1/dtc/P0A7E", headers=preflight).status_code == 200

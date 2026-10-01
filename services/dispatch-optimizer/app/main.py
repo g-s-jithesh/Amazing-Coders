@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Annotated, Any
 
 from fastapi import FastAPI, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
@@ -61,6 +62,9 @@ def create_app(
     encode: Callable[[PlanRecord], bytes] | None = None,
 ) -> FastAPI:
     app = FastAPI(title="dispatch-optimizer", version="0.1.0", docs_url="/docs")
+    # ponytail: any origin may call this internal API so the static console works from file://; the
+    # tenant guard is RLS + the caller headers, and F-10 puts JWT + a CORS allow-list in front.
+    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"], allow_headers=["*"])
     root = Path(os.environ.get("KILOWATT_ROOT", SVC.parents[1]))
     if store is None:
         from app.infrastructure.db import PgPlanStore
@@ -107,6 +111,19 @@ def create_app(
     @app.get("/metrics")
     def metrics() -> PlainTextResponse:
         return PlainTextResponse(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
+    @app.get("/internal/v1/depots")
+    def list_depots(
+        request: Request,
+        x_tenant_id: Annotated[str | None, Header()] = None,
+        x_user_id: Annotated[str | None, Header()] = None,
+        x_roles: Annotated[str | None, Header()] = None,
+    ) -> Any:
+        who = caller(x_tenant_id, x_user_id, x_roles)
+        if who is None:
+            return problem(401, "Unauthenticated", "missing or invalid caller identity", request.url.path)
+        lister = getattr(plans.fleet, "list_depots", None)
+        return {"depots": lister(who[0]) if lister else []}
 
     @app.post("/internal/v1/depots/{depot_id}/dispatch-plans")
     def create_plan(

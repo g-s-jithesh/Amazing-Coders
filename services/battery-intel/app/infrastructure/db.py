@@ -4,6 +4,7 @@ app.tenant_id, and the service connects as the non-superuser battery_app role.""
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
@@ -131,6 +132,43 @@ class PgSohReader:
             )
             for r in rows
         ]
+
+    async def summary(self, tenant_id: str, lowest: int = 20) -> dict[str, Any]:
+        """Latest estimate per pack (DISTINCT ON over the (pack_id, as_of DESC) index): count, mean, a 5-pp
+        histogram, and the packs with the lowest SoH."""
+        async with await psycopg.AsyncConnection.connect(self.dsn) as conn:
+            async with conn.transaction(), conn.cursor(row_factory=dict_row) as cur:
+                await cur.execute(SET_TENANT, (tenant_id,))
+                await cur.execute(
+                    """CREATE TEMP TABLE latest ON COMMIT DROP AS
+                       SELECT DISTINCT ON (pack_id) vin, pack_id, soh_pct, ci_low, ci_high, as_of
+                       FROM battery.soh_estimate ORDER BY pack_id, as_of DESC"""
+                )
+                await cur.execute("SELECT count(*) AS n, avg(soh_pct) AS mean FROM latest")
+                head = await cur.fetchone()
+                await cur.execute(
+                    "SELECT (floor(soh_pct / 5) * 5)::int AS bucket, count(*) AS n FROM latest GROUP BY 1 ORDER BY 1"
+                )
+                hist = await cur.fetchall()
+                await cur.execute(
+                    "SELECT vin, soh_pct, ci_low, ci_high, as_of FROM latest ORDER BY soh_pct LIMIT %s", (lowest,)
+                )
+                low = await cur.fetchall()
+        return {
+            "packs": int(head["n"]) if head else 0,
+            "mean_soh_pct": round(float(head["mean"]), 2) if head and head["mean"] is not None else None,
+            "histogram_5pp": [{"from_pct": r["bucket"], "packs": int(r["n"])} for r in hist],
+            "lowest": [
+                {
+                    "vin": r["vin"],
+                    "soh_pct": float(r["soh_pct"]),
+                    "ci_low": float(r["ci_low"]),
+                    "ci_high": float(r["ci_high"]),
+                    "as_of_ms": _ms(r["as_of"]),
+                }
+                for r in low
+            ],
+        }
 
     async def ping(self) -> None:
         async with await psycopg.AsyncConnection.connect(self.dsn) as conn:
