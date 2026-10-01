@@ -1,0 +1,9 @@
+cd services/simulator && go run ./cmd/simulator run --seed 42 --vehicles 100000 --tenants 3 --ref ../../data/reference \
+	--mode mqtt --rate-hz 0.005 --speedup 24 --noise realistic \
+	--ground-truth-out ../../data/ground_truth --duration 14h  --dt 10  
+2026/10/01 08:16:29 INFO simulator running vehicles=100000 shard=0/1 mode=mqtt rate_hz=0.005 speedup=24 noise=realistic start=2026-10-01T02:46:28.000Z target_eps=12000
+2026/10/01 08:52:15 WARN publisher closed with undelivered records err="https: 473571 records dropped; last error: https: send queue full, batch dropped"
+2026/10/01 08:52:15 INFO https dropped_records=473571
+exit 0
+2026/10/01 08:16:39 INFO stats sim_now=2026-10-01T02:50:18Z samples=182133 published=183761 publish_errors=0 encode_errors=0 avg_eps=16264
+2026/10/01 08:52:15 INFO stats sim_now=2026-10-01T16:46:18Z samples=25781897 published=26037161 publish_errors=0 encode_errors=0 avg_eps=12127

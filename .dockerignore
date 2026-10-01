@@ -9,3 +9,9 @@ docs
 # Only reference data may enter an image (seed data, simulator truth etc. stay out).
 data/*
 !data/reference
+**/.venv
+**/__pycache__
+**/.coverage
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache

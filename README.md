@@ -3,15 +3,15 @@
 EV fleet battery health, intelligent charging dispatch and fault diagnostics.
 Built for the Motorq Connected Vehicle Intelligence Hackathon (not affiliated with Motorq).
 
-> Status: simulator (F-01), ingest-gateway (F-02/F-03) and stream-processor (F-05, F-04 data side) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
+> Status: simulator (F-01), ingest-gateway (F-02/F-03), stream-processor (F-05, F-04 data side) and battery-intel (F-07 SoH, F-06 DTC decode) running end to end. See [`docs/feature-matrix.md`](docs/feature-matrix.md) for what is built.
 
 ## Quick start
 
-Requires Docker, GNU Make, Go 1.24+.
+Requires Docker, GNU Make, Go 1.24+, and [uv](https://docs.astral.sh/uv/) for the Python services' tests.
 
 ```bash
 cp .env.example .env   # dev-only values
-make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ScyllaDB, ingest-gateway, stream-processor
+make up                # builds + starts Kafka (KRaft) + topics, Postgres 16 + pgvector, Redis 8, Mosquitto, ScyllaDB, ingest-gateway, stream-processor, battery-intel (API + session worker)
 make seed              # 100K vehicles of synthetic master data → Postgres + vehicle registry topic (SEED=42 VEHICLES=100000 TENANTS=3)
 make sim               # stream 100K vehicles at 0.1 Hz (≈ 10K events/s) in real time; Ctrl-C to stop
 make test              # unit tests
@@ -48,6 +48,8 @@ cd services/simulator && go run ./cmd/simulator trace --ref ../../data/reference
 | stream-processor (processor role) `/metrics` `/readyz` | `localhost:9102` |
 | stream-processor (raw-sink role) `/metrics` `/readyz` | `localhost:9103` |
 | ScyllaDB (CQL) | `localhost:9042` |
+| battery-intel API: `/internal/v1/vehicles/{vin}/soh` (header `X-Tenant-Id`), `/internal/v1/dtc/{code}`, `/docs` | `localhost:8001` |
+| battery-intel session worker `/metrics` | `localhost:9104` |
 
 Watch alerts live: `cd services/stream-processor && go run ./cmd/alerts-tail --vin <VIN>`.
 

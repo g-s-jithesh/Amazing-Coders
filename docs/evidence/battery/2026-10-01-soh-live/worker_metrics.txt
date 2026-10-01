@@ -1,0 +1,10 @@
+soh_estimates_total 13522.0
+soh_estimates_created 1.790824845073366e+09
+soh_duplicate_sessions_total 0.0
+soh_duplicate_sessions_created 1.7908248450734355e+09
+soh_rejected_sessions_total{reason="delta_soc_below_min"} 20339.0
+soh_rejected_sessions_total{reason="telemetry_gaps"} 45269.0
+soh_rejected_sessions_total{reason="not_a_charge"} 44.0
+soh_rejected_sessions_created{reason="delta_soc_below_min"} 1.7908248515808537e+09
+soh_rejected_sessions_created{reason="telemetry_gaps"} 1.790824851788063e+09
+soh_rejected_sessions_created{reason="not_a_charge"} 1.7908249488913834e+09

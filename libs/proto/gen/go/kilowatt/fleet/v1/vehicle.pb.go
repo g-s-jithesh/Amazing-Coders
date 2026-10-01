@@ -38,6 +38,7 @@ type Vehicle struct {
 	DepartMinIst    int32                  `protobuf:"varint,10,opt,name=depart_min_ist,json=departMinIst,proto3" json:"depart_min_ist,omitempty"` // duty window, IST minute of day; return < depart = crosses midnight
 	ReturnMinIst    int32                  `protobuf:"varint,11,opt,name=return_min_ist,json=returnMinIst,proto3" json:"return_min_ist,omitempty"`
 	NominalVoltageV float64                `protobuf:"fixed64,12,opt,name=nominal_voltage_v,json=nominalVoltageV,proto3" json:"nominal_voltage_v,omitempty"` // pack nominal voltage (C-rate from kWh capacity)
+	CurrentPackId   string                 `protobuf:"bytes,13,opt,name=current_pack_id,json=currentPackId,proto3" json:"current_pack_id,omitempty"`         // battery pack currently fitted (SoH is tracked per pack)
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -156,11 +157,18 @@ func (x *Vehicle) GetNominalVoltageV() float64 {
 	return 0
 }
 
+func (x *Vehicle) GetCurrentPackId() string {
+	if x != nil {
+		return x.CurrentPackId
+	}
+	return ""
+}
+
 var File_kilowatt_fleet_v1_vehicle_proto protoreflect.FileDescriptor
 
 const file_kilowatt_fleet_v1_vehicle_proto_rawDesc = "" +
 	"\n" +
-	"\x1fkilowatt/fleet/v1/vehicle.proto\x12\x11kilowatt.fleet.v1\"\xfe\x02\n" +
+	"\x1fkilowatt/fleet/v1/vehicle.proto\x12\x11kilowatt.fleet.v1\"\xa6\x03\n" +
 	"\aVehicle\x12\x10\n" +
 	"\x03vin\x18\x01 \x01(\tR\x03vin\x12\x1b\n" +
 	"\ttenant_id\x18\x02 \x01(\tR\btenantId\x12\x19\n" +
@@ -175,7 +183,8 @@ const file_kilowatt_fleet_v1_vehicle_proto_rawDesc = "" +
 	"\x0edepart_min_ist\x18\n" +
 	" \x01(\x05R\fdepartMinIst\x12$\n" +
 	"\x0ereturn_min_ist\x18\v \x01(\x05R\freturnMinIst\x12*\n" +
-	"\x11nominal_voltage_v\x18\f \x01(\x01R\x0fnominalVoltageVBSZQgithub.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/fleet/v1;fleetv1b\x06proto3"
+	"\x11nominal_voltage_v\x18\f \x01(\x01R\x0fnominalVoltageV\x12&\n" +
+	"\x0fcurrent_pack_id\x18\r \x01(\tR\rcurrentPackIdBSZQgithub.com/g-s-jithesh/Amazing-Coders/libs/proto/gen/go/kilowatt/fleet/v1;fleetv1b\x06proto3"
 
 var (
 	file_kilowatt_fleet_v1_vehicle_proto_rawDescOnce sync.Once

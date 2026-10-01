@@ -22,6 +22,11 @@ data/seed/
 **/.mypy_cache/
 **/.ruff_cache/
 **/coverage.json
+**/.coverage
+**/coverage.xml
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
 **/cover.out
 **/.venv/
 ml/artefacts/

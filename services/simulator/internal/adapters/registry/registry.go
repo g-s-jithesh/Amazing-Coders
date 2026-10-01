@@ -36,7 +36,7 @@ func Records(ds *masterdata.Dataset, models []masterdata.Model) ([]*fleetv1.Vehi
 		}
 		out[i] = &fleetv1.Vehicle{
 			Vin: v.VIN, TenantId: v.TenantID, FleetId: v.FleetID, DepotId: d.ID, DepotLat: d.Lat, DepotLon: d.Lon,
-			ModelCode: m.Code, CapacityKwh: m.CapacityKWh, WhPerKm: float64(m.WhPerKm), NominalVoltageV: m.VoltageV,
+			ModelCode: m.Code, CapacityKwh: m.CapacityKWh, WhPerKm: float64(m.WhPerKm), NominalVoltageV: m.VoltageV, CurrentPackId: v.PackID,
 			DepartMinIst: int32(ds.Duties[i].DepartMin), ReturnMinIst: int32(ds.Duties[i].ReturnMin),
 		}
 	}

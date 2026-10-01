@@ -38,23 +38,25 @@ seed: ## generate master data (SEED, VEHICLES, TENANTS) and load it into Postgre
 	$(PSQL) -1 -f - < infra/compose/seed-load.sql
 	$(PSQL) -c "SELECT (SELECT count(*) FROM fleet.vehicle) AS vehicles, (SELECT count(*) FROM fleet.depot) AS depots, (SELECT count(*) FROM fleet.charger) AS chargers"
 
-sim: ## stream telemetry (MODE=mqtt|https|kafka-direct RATE_HZ SPEEDUP NOISE DURATION INJECT=<vin>:<fault> PRECURSOR=12h)
+sim: ## stream telemetry (MODE=mqtt|https|kafka-direct RATE_HZ SPEEDUP NOISE DURATION START=<rfc3339> DT INJECT=<vin>:<fault> PRECURSOR=12h)
 	$(SIM) run --seed $(SEED) --vehicles $(VEHICLES) --tenants $(TENANTS) --ref ../../data/reference \
 		--mode $(MODE) --rate-hz $(RATE_HZ) --speedup $(SPEEDUP) --noise $(NOISE) \
-		--ground-truth-out ../../data/ground_truth $(if $(DURATION),--duration $(DURATION)) $(if $(INJECT),--demo-inject $(INJECT)) $(if $(PRECURSOR),--demo-precursor $(PRECURSOR))
+		--ground-truth-out ../../data/ground_truth $(if $(DURATION),--duration $(DURATION)) $(if $(START),--start $(START)) $(if $(DT),--dt $(DT)) $(if $(INJECT),--demo-inject $(INJECT)) $(if $(PRECURSOR),--demo-precursor $(PRECURSOR))
 
 e2e: ## end-to-end run with demo fault, alert latency and lag capture (OUT=<local dir> DURATION VIN)
 	bash tests/load/e2e-local.sh
 
-test: ## unit tests with coverage (all Go modules)
+test: ## unit tests with coverage (Go modules + Python services)
 	cd libs/go-common && go test -timeout 5m -cover ./...
 	cd services/simulator && go test -timeout 5m -cover ./...
 	cd services/ingest-gateway && go test -timeout 5m -cover ./...
 	cd services/stream-processor && go test -timeout 5m -cover ./...
+	cd services/battery-intel && uv run pytest -q --cov=app/domain --cov=app/application --cov-fail-under=80
 
 test-int: ## integration tests against the local stack (make up first)
 	cd services/simulator && go test -tags integration -count=1 ./...
 	cd services/ingest-gateway && go test -tags integration -count=1 ./...
+	cd services/battery-intel && uv run pytest -q -m integration
 
 samples: ## regenerate libs/oem-samples golden files from the encoders
 	cd services/simulator && go test ./internal/adapters/encoders -run TestGoldenFiles -update

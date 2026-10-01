@@ -142,6 +142,53 @@ services:
       - ../../services/stream-processor/cql:/cql:ro
     restart: "no"
 
+  battery-migrate:
+    image: pgvector/pgvector:pg16
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER:-kilowatt}
+      PGPASSWORD: ${POSTGRES_PASSWORD:-kilowatt-dev-only}
+      PGDATABASE: ${POSTGRES_DB:-kilowatt}
+    # Apply the schema as the owner, then (re)load the DTC reference table from the catalogue CSV.
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        psql -v ON_ERROR_STOP=1 -q -f /migrations/0001_battery_core.sql &&
+        psql -v ON_ERROR_STOP=1 -q -1 -c 'TRUNCATE battery.dtc_code' -c "\copy battery.dtc_code FROM '/ref/dtc_catalogue.csv' CSV HEADER"
+    volumes:
+      - ../../services/battery-intel/migrations:/migrations:ro
+      - ../../data/reference/dtc_catalogue.csv:/ref/dtc_catalogue.csv:ro
+    restart: "no"
+
+  battery-intel:
+    build:
+      context: ../..
+      dockerfile: services/battery-intel/Dockerfile
+    ports: ["127.0.0.1:8001:8001"] # loopback only: tenant comes from X-Tenant-Id until F-10 (JWT)
+    environment:
+      DATABASE_URL: postgresql://battery_app:battery-app-dev-only@postgres:5432/${POSTGRES_DB:-kilowatt}
+    depends_on:
+      battery-migrate: { condition: service_completed_successfully }
+
+  battery-worker:
+    build:
+      context: ../..
+      dockerfile: services/battery-intel/Dockerfile
+    command: ["python", "-m", "app.workers.session_consumer"]
+    restart: unless-stopped # transient DB/Kafka errors exit; the uncommitted batch is re-read on restart
+    ports: ["9104:9104"]
+    environment:
+      DATABASE_URL: postgresql://battery_app:battery-app-dev-only@postgres:5432/${POSTGRES_DB:-kilowatt}
+      KAFKA_BOOTSTRAP: kafka:29092
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9104/metrics', timeout=2)"]
+    depends_on:
+      battery-migrate: { condition: service_completed_successfully }
+      kafka-init: { condition: service_completed_successfully }
+
   redis:
     image: redis:8.0
     ports: ["6379:6379"]

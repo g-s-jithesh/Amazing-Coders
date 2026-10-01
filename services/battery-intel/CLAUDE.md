@@ -19,8 +19,8 @@ app/
   api/v1/internal/        # called by fleet-api / copilot-agent only (service JWT + user token passthrough)
   application/            # EstimateSohFromSession, ScoreFleetRisk, ExplainDtc, FindSimilarFaults, SearchRunbooks
   domain/
-    soh/                  # coulomb counting, OCV→SoC lookup, session quality gates, 1-D Kalman filter, RUL fit
-    dtc/                  # DTC decode (system/subsystem), severity mapping
+    soh.py                # coulomb counting, session quality gates, local-linear-trend Kalman filter, RUL fit
+    dtc.py                # DTC decode (system, SAE/manufacturer range), catalogue lookup
     signature/            # 48 h window → 64-d vector (pure numpy)
   infrastructure/         # repositories, kafka consumer, model loader, embedding model, pgvector queries
   workers/session_consumer.py   # battery.sessions.v1 → SoH update
@@ -35,6 +35,20 @@ models/                   # model registry.json (version → path + sha256); art
 4. **Kalman filter** per pack: state = SoH, a small process noise (fade per day), and a measurement noise from session quality. Output SoH ± 1.96σ as a CI.
 5. **RUL:** fit SoH vs (√t, EFC) per pack; days until the EOL threshold (config, default 80%).
 6. The **ML SoH model** (from `ml/`) is served alongside as `method=ml`. The UI shows the physics estimate by default, and the model where it beats the baseline (evidence in `ml/reports/`).
+
+### As built (Step 6b, 2026-10-01)
+
+- **ΔSoC uses the BMS SoC**, not an OCV table: the only OCV curve we have is the simulator's own, and using it would leak simulator physics into the estimator. A rest ≥ 30 min before the session (`v_rest_before` set) halves the SoC σ (1.0 → 0.5 pp). The rest-*after* case is not detected yet.
+- **Gates**: ΔSoC ≥ 20 pp, 15–35 °C, no un-integrated gaps (> 5 min), ≥ 10 samples. Each rejection is counted by reason (`soh_rejected_sessions_total{reason}`).
+- **Kalman = local linear trend** (state: SoH + fade rate pp/day, 2×2 covariance in `pack_kf_state`). The 1-D random walk was tried first: it lags a steady fade and its 95 % CI under-covered the truth, failing the coverage test; the trend model passes the 90–99.5 % coverage test.
+- **RUL** fits SoH = a + b·√t over the estimate history (EFC term not yet: no EFC in the session stream).
+- **Registry**: VIN → (tenant, pack, nominal Ah = kWh·1000 / V) from the compacted `fleet.vehicle.v1` topic, read from the beginning and followed. A session for an unknown VIN is rejected as `unregistered_vin` and **committed** (not retried). ponytail: run `make seed` before the worker sees traffic; add a retry/park topic if registry lag ever matters.
+- **Idempotency**: `UNIQUE (pack_id, session_id)`; the Kalman state advances only when the estimate insert happened, in the same transaction (`SELECT … FOR UPDATE`).
+- **Offsets**: stored per record after it is handled and committed by the client in the background (`enable.auto.offset.store=false`). A synchronous `commit()` hung the worker indefinitely when the group coordinator became unavailable under local load.
+- **Tenant**: the internal API takes `X-Tenant-Id` until F-10 brings JWT passthrough; RLS (role `battery_app`, not a superuser) is the real guard. Cross-tenant VIN → 404.
+- **Bad data**: non-finite inputs and observations outside 50–120 % are rejected (`non_finite_input`, `implausible_soh`); undecodable records and DB data errors are counted as `poison` and committed, so one bad record cannot crash-loop the worker. Connection errors exit the worker (compose `restart: unless-stopped`) without committing.
+- **History** for a VIN is reported for the current pack only (pack swap).
+- Schema is applied by the compose one-shot `battery-migrate` (plain SQL, idempotent) which also reloads `dtc_code` from the catalogue CSV.
 
 ## Fault risk (7-day)
 
